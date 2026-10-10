@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <PackageId>CodeAtlas.Otlp</PackageId>
+    <Version>0.1.0</Version>
+    <Description>OTLP trace messages (opentelemetry-proto v1.5.0) used internally by CodeAtlas Live.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="3.36.2" />
+    <PackageReference Include="Grpc.Tools" Version="2.84.0" PrivateAssets="all" />
+    <Protobuf Include="protos/**/*.proto" ProtoRoot="protos" GrpcServices="None" Access="Internal" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="CodeAtlas.AspNetCore" />
+    <InternalsVisibleTo Include="CodeAtlas.Collector" />
+    <InternalsVisibleTo Include="CodeAtlas.Otlp.Tests" />
+    <InternalsVisibleTo Include="CodeAtlas.AspNetCore.Tests" />
+    <InternalsVisibleTo Include="CodeAtlas.Collector.Tests" />
+  </ItemGroup>
+</Project>

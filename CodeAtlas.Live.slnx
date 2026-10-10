@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CodeAtlas.Otlp/CodeAtlas.Otlp.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CodeAtlas.Otlp.Tests/CodeAtlas.Otlp.Tests.csproj" />
+  </Folder>
+</Solution>
