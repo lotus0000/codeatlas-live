@@ -161,7 +161,20 @@ what an app's own exporter sends. The MVP design avoids this:
   app's decision still controls the `sampled` flag and its exporters (which only export `Recorded` activities);
   when it has none, CodeAtlas still sees every request.
 
-Plan task 1 proves this with a test app that has its own tracing (in-memory exporter, 0 % and 100 % samplers):
+- **Parent links (found while planning).** CodeAtlas's own spans (endpoint, action, handler) become the parent of
+  the database and HTTP spans created inside them. An app that has its own tracing would then export those child
+  spans with a parent its backend never receives (broken trees in the app's own tool). Therefore:
+  **when the app has its own tracing** (a `TracerProvider` is registered before `AddCodeAtlas`), CodeAtlas does not
+  create endpoint/action/handler spans; it shows the server, database and HTTP spans only, logs a warning once,
+  and the viewer shows a banner explaining why. `WrapperSpansBesideAppTracing = true` opts back in and accepts the
+  broken parent links in the app's own tool (Development only). Apps without their own tracing (e.g. example-app)
+  get the full tree.
+- **HTTP facts without mutation.** CodeAtlas does not add ASP.NET Core instrumentation to any provider (that would
+  attach exception events and enrichment to shared activities). A first-in-pipeline middleware records method, route
+  and status code in a side table keyed by the request's `Activity` object (`ConditionalWeakTable`), and the
+  serializer merges them.
+
+Plan task 4 proves this with a test app that has its own tracing (in-memory exporter, 0 % and 100 % samplers):
 the app's exported spans must be identical with and without CodeAtlas (count, names, attributes, sampled flags,
 including when the app customizes its own ASP.NET Core instrumentation options),
 and CodeAtlas must receive every request. **If any assertion fails, implementation stops and the maintainer decides** between
@@ -344,6 +357,7 @@ All suites run from one command (`scripts/test-all.sh`).
 - Heuristic correlation can over-attach follow-up requests.
 - Database tracing is Npgsql-only in the MVP.
 - Exception messages are captured and may contain data.
+- An app that has its own tracing gets no endpoint/action/handler spans by default (§5.4).
 - An app whose own sampler drops a request: see §5.4 outcome.
 - Background work outside a request appears as separate root traces.
 
@@ -358,4 +372,5 @@ All suites run from one command (`scripts/test-all.sh`).
 
 1. Approve this specification.
 2. code-server visual open from the PoC: pending your manual check.
-3. §5.4 outcome, only if plan task 1 fails.
+3. §5.4 default when the app has its own tracing: no wrapper spans (recommended), with an opt-in. Confirm or change.
+4. §5.4 outcome, only if plan task 4 fails.
