@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Diagnostics;
 using CodeAtlas.AspNetCore.Http;
 using Google.Protobuf;
@@ -19,7 +18,11 @@ internal sealed class SpanSerializer(bool keepDbStatements, HttpFactsStore facts
     public const string AspNetCoreSource = "Microsoft.AspNetCore";
 
     private static readonly HashSet<string> DbText = ["db.statement", "db.query.text"];
-    private static readonly HashSet<string> Dropped = ["db.npgsql.data_source", "db.connection_string", "url.query"];
+    private const int MaxArrayItems = 128;
+    private static readonly HashSet<string> Dropped =
+        ["db.npgsql.data_source", "db.connection_string", "url.query", "user_agent.original", "client.address"];
+    // Header values and end-user identity, whoever recorded them (the app's own instrumentation may add these).
+    private static readonly string[] DroppedPrefixes = ["http.request.header.", "http.response.header.", "enduser."];
 
     public SerializedSpan Serialize(Activity activity)
     {
@@ -36,7 +39,7 @@ internal sealed class SpanSerializer(bool keepDbStatements, HttpFactsStore facts
 
         foreach (var (key, value) in activity.TagObjects)
         {
-            if (value is null || Dropped.Contains(key)) continue;
+            if (value is null || Dropped.Contains(key) || DroppedPrefixes.Any(key.StartsWith)) continue;
             if (DbText.Contains(key) && value is string sql)
             {
                 var summary = SqlSummary.Summarize(sql);
@@ -45,14 +48,14 @@ internal sealed class SpanSerializer(bool keepDbStatements, HttpFactsStore facts
                 if (keepDbStatements) span.Attributes.Add(Kv(key, sql));
                 continue;
             }
-            span.Attributes.Add(Kv(key, key == "url.full" && value is string url ? StripQuery(url) : value));
+            TryAdd(span.Attributes, key, key == "url.full" && value is string url ? StripQuery(url) : value);
         }
 
         foreach (var e in activity.Events)
         {
             var ev = new ProtoSpan.Types.Event { Name = e.Name, TimeUnixNano = Nanos(e.Timestamp.UtcDateTime) };
             foreach (var (key, value) in e.Tags)
-                if (value is not null) ev.Attributes.Add(Kv(key, value));
+                if (value is not null) TryAdd(ev.Attributes, key, value);
             span.Events.Add(ev);
         }
 
@@ -68,6 +71,13 @@ internal sealed class SpanSerializer(bool keepDbStatements, HttpFactsStore facts
     }
 
     public static KeyValue Kv(string key, object value) => new() { Key = key, Value = Any(value) };
+
+    // One bad value (e.g. a ToString() that throws) costs that attribute, never the span.
+    private static void TryAdd(Google.Protobuf.Collections.RepeatedField<KeyValue> attributes, string key, object value)
+    {
+        try { attributes.Add(Kv(key, value)); }
+        catch (Exception) { }
+    }
 
     private static void ApplyHttpFacts(ProtoSpan span, HttpFacts http)
     {
@@ -100,15 +110,19 @@ internal sealed class SpanSerializer(bool keepDbStatements, HttpFactsStore facts
         bool b => new AnyValue { BoolValue = b },
         int or long or short or byte or sbyte or ushort or uint => new AnyValue { IntValue = Convert.ToInt64(value) },
         double or float or decimal => new AnyValue { DoubleValue = Convert.ToDouble(value) },
-        IEnumerable list => ArrayOf(list),
+        // Only real arrays: any other sequence may be lazy (a query, an iterator) and must never be enumerated here.
+        Array items => ArrayOf(items),
         _ => new AnyValue { StringValue = value.ToString() ?? "" },
     };
 
-    private static AnyValue ArrayOf(IEnumerable list)
+    private static AnyValue ArrayOf(Array items)
     {
         var array = new ArrayValue();
-        foreach (var item in list)
+        foreach (var item in items)
+        {
+            if (array.Values.Count == MaxArrayItems) break;
             if (item is not null) array.Values.Add(Any(item));
+        }
         return new AnyValue { ArrayValue = array };
     }
 

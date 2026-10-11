@@ -82,13 +82,15 @@ group.MapPost("/", Create).WithValidation<ProductRequest>()
 ## If your app already uses OpenTelemetry tracing
 
 CodeAtlas runs its own private tracer provider and never changes your sampler, exporters, instrumentation or the data
-they send. Because its endpoint/action/handler spans would become parents your own tool never receives, they are
+they send, and its own export traffic never shows up in your HTTP client metrics. Because its endpoint/action/handler spans would become parents your own tool never receives, they are
 **off** in that case (a warning is logged once). You still get server, database and HttpClient spans.
 
 ## Privacy
 
-Never sent: SQL text and parameters, connection strings, URL query strings, request/response bodies, headers, method
-arguments. Sent: exception messages and stack traces (Development only).
+Never sent: SQL text and parameters, connection strings, URL query strings, request/response bodies, header values
+(including `user_agent.original` and any `http.*.header.*` tags), client addresses, `enduser.*` tags and method
+arguments. Sent: exception messages and stack traces (Development only). If your own instrumentation adds other tags
+to request activities (for example through an enrichment callback), those tags are sent too.
 
 ## If the collector is not running
 

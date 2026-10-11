@@ -161,4 +161,63 @@ public class SpanSerializerTests
         Assert.Equal(ulong.MaxValue.ToString(), span.Attributes.Single(a => a.Key == "big").Value.StringValue);
         Assert.Equal(1.5, span.Attributes.Single(a => a.Key == "dbl").Value.DoubleValue);
     }
+
+    [Fact]
+    public void Header_and_personal_tags_are_dropped()
+    {
+        var activity = TestActivities.Finished(SpanSerializer.AspNetCoreSource, "in", ActivityKind.Server, a =>
+        {
+            a.SetTag("user_agent.original", "Agent-SECRET");
+            a.SetTag("http.request.header.authorization", new[] { "Bearer SECRET" });
+            a.SetTag("http.response.header.set-cookie", new[] { "sid=SECRET" });
+            a.SetTag("client.address", "203.0.113.9");
+            a.SetTag("enduser.id", "alice@example.com");
+            a.SetTag("url.path", "/ping");
+        });
+
+        var (_, span) = Serializer().Serialize(activity);
+
+        Assert.Equal(["url.path"], span.Attributes.Select(a => a.Key));
+    }
+
+    [Fact]
+    public void Lazy_sequences_are_never_enumerated()
+    {
+        var enumerated = 0;
+        IEnumerable<int> Lazy() { enumerated++; yield return 1; }
+        var activity = TestActivities.Finished("Test.Source", "work", setup: a => a.SetTag("lazy", Lazy()));
+
+        Serializer().Serialize(activity);
+
+        Assert.Equal(0, enumerated);
+    }
+
+    [Fact]
+    public void A_tag_whose_ToString_throws_does_not_drop_the_span()
+    {
+        var activity = TestActivities.Finished("Test.Source", "work", setup: a =>
+        {
+            a.SetTag("bad", new Throwing());
+            a.SetTag("good", "kept");
+        });
+
+        var (_, span) = Serializer().Serialize(activity);
+
+        Assert.Equal(["good"], span.Attributes.Select(a => a.Key));
+    }
+
+    [Fact]
+    public void Large_arrays_are_capped()
+    {
+        var activity = TestActivities.Finished("Test.Source", "work", setup: a => a.SetTag("bytes", new byte[100_000]));
+
+        var (_, span) = Serializer().Serialize(activity);
+
+        Assert.Equal(128, span.Attributes.Single().Value.ArrayValue.Values.Count);
+    }
+
+    private sealed class Throwing
+    {
+        public override string ToString() => throw new ObjectDisposedException("context");
+    }
 }

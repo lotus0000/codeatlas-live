@@ -32,7 +32,7 @@ internal sealed class CodeAtlasTracing(
         Processor = new CodeAtlasExportProcessor(serializer, sink, resource, runtime.Options.QueueCapacity, runtime.Options.BatchDelay, logger);
         _provider = Sdk.CreateTracerProviderBuilder()
             .AddSource(Sources)
-            .SetSampler(new RecordOnlySampler())
+            .SetSampler(new CodeAtlasSampler(runtime.AppHasTracing))
             .AddProcessor(Processor)
             .Build();
         return Task.CompletedTask;
