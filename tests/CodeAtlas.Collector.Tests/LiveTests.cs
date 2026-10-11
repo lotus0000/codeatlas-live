@@ -9,14 +9,14 @@ public class LiveTests
     public async Task Viewers_are_told_which_traces_changed()
     {
         await using var host = await CollectorHost.StartAsync();
-        var received = new TaskCompletionSource<string[]>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var received = new TaskCompletionSource<CodeAtlas.Collector.Analysis.TraceSummary[]>(TaskCreationOptions.RunContinuationsAsynchronously);
         await using var connection = new HubConnectionBuilder().WithUrl($"{host.BaseUrl}/live").Build();
-        connection.On<string[]>("traces-updated", ids => received.TrySetResult(ids));
+        connection.On<CodeAtlas.Collector.Analysis.TraceSummary[]>("traces-updated", s => received.TrySetResult(s));
         await connection.StartAsync();
 
         (await TestOtlp.PostAsync(host.Client, TestOtlp.Request("api", "s", [TestOtlp.Span(TestOtlp.TraceId(7), TestOtlp.SpanId(1), null, "x")]))).Dispose();
 
-        Assert.Equal([TestOtlp.TraceId(7)], await received.Task.WaitAsync(TimeSpan.FromSeconds(5)));
+        Assert.Equal([TestOtlp.TraceId(7)], (await received.Task.WaitAsync(TimeSpan.FromSeconds(5))).Select(s => s.TraceId));
     }
 
     [Fact]
