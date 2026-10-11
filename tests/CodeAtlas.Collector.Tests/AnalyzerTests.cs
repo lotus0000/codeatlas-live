@@ -131,12 +131,17 @@ public class AnalyzerTests
         var spans = Spans(
             ("api", "s", TestOtlp.Span(T, TestOtlp.SpanId(1), TestOtlp.SpanId(1), "self")),
             ("api", "s", TestOtlp.Span(T, TestOtlp.SpanId(2), TestOtlp.SpanId(3), "a")),
-            ("api", "s", TestOtlp.Span(T, TestOtlp.SpanId(3), TestOtlp.SpanId(2), "b")));
+            ("api", "s", TestOtlp.Span(T, TestOtlp.SpanId(3), TestOtlp.SpanId(2), "b")),
+            ("api", "s", TestOtlp.Span(T, TestOtlp.SpanId(4), TestOtlp.SpanId(2), "below a")));
 
         var view = TraceAnalyzer.Analyze(T, spans, false, Later);
 
-        Assert.Equal(3, All(view.Roots).Count());
-        Assert.All(view.Roots, r => Assert.Contains(r.Gaps, g => g.Kind == "missing-parent"));
+        Assert.Equal(["self", "a", "b"], view.Roots.Select(r => r.Span.Name).Order().ToList().OrderBy(n => n == "self" ? 0 : n == "a" ? 1 : 2));
+        Assert.All(view.Roots, r => Assert.Contains(r.Gaps, g => g.Kind == "parent-cycle"
+            && g.Message == "This span's parent links form a cycle, so where it belongs in the tree is unknown."));
+        var below = Assert.Single(view.Roots.Single(r => r.Span.Name == "a").Children);
+        Assert.Equal("below a", below.Span.Name);
+        Assert.Empty(below.Gaps);
     }
 
     [Fact]

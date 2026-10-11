@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net.Http.Json;
 using System.Text.Json;
 using CodeAtlas.Collector.Source;
@@ -200,6 +201,48 @@ public sealed class SourceMapTests : IDisposable
         var location = Resolve(token);
 
         Assert.False(location.Found);
+    }
+
+    [Fact]
+    public void No_file_handles_stay_open_after_a_lookup()
+    {
+        Assert.SkipUnless(OperatingSystem.IsLinux(), "Reads /proc/self/fd.");
+        Assert.True(Resolve(_fixture.Token("Fixture.Orders", "Count", "Int32")).Found);
+
+        var open = Directory.GetFiles("/proc/self/fd")
+            .Select(fd => { try { return new FileInfo(fd).LinkTarget; } catch (IOException) { return null; } })
+            .Where(target => target is not null && target.StartsWith(_root, StringComparison.Ordinal))
+            .ToList();
+
+        Assert.Empty(open);
+    }
+
+    [Fact]
+    public async Task Lookups_while_the_assembly_is_rebuilt_never_throw()
+    {
+        var directory = Path.Combine(_root, "rebuild");
+        var first = FixtureAssembly.Build(directory, FixtureAssembly.FixtureText, assemblyName: "Rebuilt");
+        var token = first.Token("Fixture.Orders", "Count", "Int32");
+        var errors = new ConcurrentQueue<Exception>();
+        using var stop = new CancellationTokenSource();
+        var readers = Enumerable.Range(0, 4).Select(_ => Task.Run(() =>
+        {
+            while (!stop.IsCancellationRequested)
+            {
+                try { _map.Resolve(first.DllPath, first.Mvid, token); }
+                catch (Exception e) { errors.Enqueue(e); }
+            }
+        })).ToArray();
+
+        for (var i = 0; i < 15; i++)
+        {
+            FixtureAssembly.Build(directory, FixtureAssembly.FixtureText + $"\n// build {i}\n", assemblyName: "Rebuilt");
+            await Task.Delay(10);
+        }
+        stop.Cancel();
+        await Task.WhenAll(readers);
+
+        Assert.Empty(errors);
     }
 
     [Fact]

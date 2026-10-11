@@ -1,7 +1,7 @@
 # Known limitations
 
-Backend integration (`CodeAtlas.AspNetCore`), as of Plan 1. Plan 5 extends this file with collector, browser and
-viewer limitations.
+Backend integration (`CodeAtlas.AspNetCore`, Plan 1) and collector (`CodeAtlas.Collector`, Plan 2). Plan 5 extends
+this file with browser and viewer limitations.
 
 ## By design
 
@@ -34,3 +34,18 @@ only; `CodeAtlas:Enabled=false` works in Development; invalid settings no longer
 `AddCodeAtlas()` calls are ignored; header values, client address and `enduser.*` tags are dropped; lazy tag values
 are never enumerated; CodeAtlas's export traffic stays out of the app's traces and metrics; the downstream sampled flag
 is unchanged; the host stop flushes queued spans.
+
+## Collector: deferred minor issues (Plan 2 final review)
+
+| Issue | Impact | Safe to defer? |
+|---|---|---|
+| `api/source` re-reads the file for display instead of returning the bytes it verified. | If the file is saved during a lookup, the text shown may not match the verified lines. | Yes (rare timing) |
+| The PDB path recorded in an assembly is not checked against the source roots before it is read. | A crafted DLL already inside a root could make the collector read (not return) a PDB elsewhere, or hang on a FIFO. | Yes (needs a hostile file inside your own source root) |
+| Source-root matching is case-sensitive. | On Windows/macOS a casing or drive-letter difference between the PDB path and `--source-root` gives a false "outside the roots" refusal. | Yes on Linux; **fix before Windows use** |
+| Roslyn parses the file on every lookup (no per-hash cache). | Slower source panel on large files. | Yes |
+| Deterministic builds (PathMap `/_/…`) are refused as "outside the source roots" without a hint. | Confusing message. | Yes |
+| Port already in use (4318 is the standard OTLP port, e.g. Jaeger) ends with an exception dump instead of a hint to use `--urls`. | Confusing start-up failure. | Yes |
+| After a non-zero editor exit, stderr is read without a timeout. | A grandchild process holding the pipe could hang that one request. | Yes |
+| The store caps span count and string length, not span names, event counts or array lengths; limits ≤ 0 are not validated. | Memory use from unusual but local input. | Yes |
+| The session token comparison is not constant-time. | Negligible on loopback. | Yes |
+| On Windows, `code.cmd` / `rider.cmd` run through cmd.exe, which interprets `&` and `%` in arguments. | A source path containing those characters could be misparsed by cmd.exe. | Yes; prefer `.exe` editors on Windows (documented in Plan 5) |

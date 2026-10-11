@@ -20,7 +20,7 @@ internal static class EditorEndpoints
         {
             if (request.Headers["X-CodeAtlas-Token"] != session.Value)
                 return Results.Problem("Missing or wrong session token.", statusCode: StatusCodes.Status401Unauthorized);
-            if (!OriginAllowed(request, options))
+            if (!OriginRule.Allowed(request, options))
                 return Results.Problem("This page's origin may not open files.", statusCode: StatusCodes.Status403Forbidden);
 
             // Only an identity comes in; file and line come from the verified PDB mapping.
@@ -32,14 +32,5 @@ internal static class EditorEndpoints
                 ? Results.Ok(new { message, file = location.File, line = location.NavigationLine })
                 : Results.Problem(message, statusCode: StatusCodes.Status502BadGateway);
         }).Accepts<OpenRequest>("application/json");
-    }
-
-    // Same-origin page (Origin authority equals Host), the configured public URL, or a non-browser client (no Origin).
-    private static bool OriginAllowed(HttpRequest request, CollectorOptions options)
-    {
-        if (request.Headers.Origin is not { Count: > 0 } values) return true;
-        if (!Uri.TryCreate(values.ToString(), UriKind.Absolute, out var origin)) return false;
-        if (options.PublicUrl is { } publicUrl && origin.GetLeftPart(UriPartial.Authority) == publicUrl.GetLeftPart(UriPartial.Authority)) return true;
-        return string.Equals(origin.Authority, request.Host.Value, StringComparison.OrdinalIgnoreCase);
     }
 }

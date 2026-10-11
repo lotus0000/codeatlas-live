@@ -18,16 +18,22 @@ public static class Explainer
         var interaction = nodes.FirstOrDefault(n => n.Kind == "interaction");
         lines.Add(interaction is null
             ? new("entry", "No browser interaction was captured for this trace.", [])
-            : new("entry", interaction.Correlation == "explicit"
-                ? $"The interaction \"{summary.Interaction}\" triggered this request (explicit link)."
-                : $"The interaction \"{summary.Interaction}\" likely triggered this request (linked by timing, not proven).",
-                [interaction.Span.SpanId]));
+            : new("entry", interaction.Correlation switch
+            {
+                "explicit" => $"The interaction \"{summary.Interaction}\" triggered this request (explicit link).",
+                "heuristic" => $"The interaction \"{summary.Interaction}\" likely triggered this request (linked by timing, not proven).",
+                _ => $"The interaction \"{summary.Interaction}\" is linked to this request (how it was linked is not recorded).",
+            }, [interaction.Span.SpanId]));
 
         foreach (var server in nodes.Where(n => n.Kind == "server"))
         {
             var a = server.Span.Attributes;
-            lines.Add(new("request",
-                $"{a.GetValueOrDefault("http.request.method")} {a.GetValueOrDefault("http.route") ?? server.Span.Name} returned {a.GetValueOrDefault("http.response.status_code")} in {Ms(server.Span.DurationMs)} ms.",
+            var subject = a.GetValueOrDefault("http.request.method") is string method
+                ? $"{method} {a.GetValueOrDefault("http.route") ?? server.Span.Name}"
+                : $"Request {a.GetValueOrDefault("http.route") ?? server.Span.Name}";
+            lines.Add(new("request", a.GetValueOrDefault("http.response.status_code") is { } status
+                ? $"{subject} returned {status} in {Ms(server.Span.DurationMs)} ms."
+                : $"{subject} finished in {Ms(server.Span.DurationMs)} ms (status not recorded).",
                 [server.Span.SpanId]));
         }
 

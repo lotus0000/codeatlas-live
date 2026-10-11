@@ -1,3 +1,6 @@
+using System.Diagnostics;
+using System.Net.WebSockets;
+using System.Text;
 using CodeAtlas.Collector.Tests.Support;
 using Microsoft.AspNetCore.SignalR.Client;
 
@@ -28,5 +31,39 @@ public class LiveTests
             (await TestOtlp.PostAsync(host.Client, TestOtlp.Request("api", "s", [TestOtlp.Span(TestOtlp.TraceId(i), TestOtlp.SpanId(1), null, "x")]))).Dispose();
 
         Assert.Equal(System.Net.HttpStatusCode.NotFound, (await host.Client.GetAsync($"api/traces/{TestOtlp.TraceId(1)}/spans")).StatusCode);
+    }
+
+    [Fact]
+    public async Task A_page_from_another_origin_cannot_subscribe()
+    {
+        await using var host = await CollectorHost.StartAsync();
+        using var socket = new ClientWebSocket();
+        socket.Options.SetRequestHeader("Origin", "https://evil.example");
+
+        await Assert.ThrowsAnyAsync<WebSocketException>(() => socket.ConnectAsync(new Uri($"{host.BaseUrl.Replace("http", "ws")}/live"), CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task A_viewer_that_never_reads_does_not_slow_down_ingest()
+    {
+        await using var host = await CollectorHost.StartAsync();
+        using var stalled = new ClientWebSocket();
+        await stalled.ConnectAsync(new Uri($"{host.BaseUrl.Replace("http", "ws")}/live"), CancellationToken.None);
+        await stalled.SendAsync(Encoding.UTF8.GetBytes("{\"protocol\":\"json\",\"version\":1}\u001e"), WebSocketMessageType.Text, true, CancellationToken.None);
+        var handshake = new byte[64];
+        var reply = await stalled.ReceiveAsync(handshake, CancellationToken.None);
+        Assert.Equal("{}\u001e", Encoding.UTF8.GetString(handshake, 0, reply.Count)); // subscribed; from now on it never reads
+        var route = new string('r', 4000);
+
+        var slowest = TimeSpan.Zero;
+        for (var i = 0; i < 3000; i++)
+        {
+            var clock = Stopwatch.StartNew();
+            (await TestOtlp.PostAsync(host.Client, TestOtlp.Request("api", "s",
+                [TestOtlp.Span(TestOtlp.TraceId(i + 1), TestOtlp.SpanId(1), null, "x", OpenTelemetry.Proto.Trace.V1.Span.Types.SpanKind.Server, 0, 1, ("http.route", route))]))).Dispose();
+            if (clock.Elapsed > slowest) slowest = clock.Elapsed;
+        }
+
+        Assert.True(slowest < TimeSpan.FromSeconds(2), $"slowest ingest took {slowest.TotalMilliseconds:0} ms");
     }
 }

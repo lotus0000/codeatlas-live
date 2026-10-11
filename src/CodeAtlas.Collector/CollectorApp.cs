@@ -41,15 +41,31 @@ public static class CollectorApp
         builder.Services.AddSingleton(new Editor.SessionToken(Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32))));
         builder.Services.AddSignalR();
         builder.Services.AddSingleton<Live.LiveNotifier>();
+        builder.Services.AddHostedService(sp => sp.GetRequiredService<Live.LiveNotifier>());
         builder.Services.AddCors(cors => cors.AddPolicy(IngestCors, policy => policy
             .WithOrigins([.. options.AllowedOrigins]).WithMethods("POST").WithHeaders("content-type", "content-encoding")));
-        builder.Services.ConfigureHttpJsonOptions(json => json.SerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase);
+        builder.Services.ConfigureHttpJsonOptions(json =>
+        {
+            json.SerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+            // A trace view nests two JSON levels per span level; a full-depth chain must still serialize.
+            json.SerializerOptions.MaxDepth = options.Limits.MaxSpansPerTrace * 2 + 64;
+        });
 
         var app = builder.Build();
         if (options.PathBase is { } pathBase) app.UsePathBase(pathBase);
         // WebApplication adds routing at the very start unless it is added explicitly; it must run after the path base.
         app.UseRouting();
         app.UseCors();
+        // WebSockets are not covered by CORS: refuse live connections from other sites explicitly.
+        app.Use(async (context, next) =>
+        {
+            if (context.Request.Path.StartsWithSegments("/live") && !OriginRule.Allowed(context.Request, options))
+            {
+                context.Response.StatusCode = Microsoft.AspNetCore.Http.StatusCodes.Status403Forbidden;
+                return;
+            }
+            await next();
+        });
         app.UseDefaultFiles();
         app.UseStaticFiles();
         TraceEndpoints.Map(app);

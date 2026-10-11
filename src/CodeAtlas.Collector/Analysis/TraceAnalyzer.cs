@@ -11,6 +11,7 @@ public static class TraceAnalyzer
 {
     public const string MissingParent = "Parent span not received yet: it may still be in an export batch, sampled out, or its export failed.";
     public const string NoServerSpan = "No server span received for this request. The backend may not be instrumented, the span may be sampled out, or its export was delayed or failed.";
+    public const string ParentCycle = "This span's parent links form a cycle, so where it belongs in the tree is unknown.";
     public const string HandlerNotRecorded = "The handler's execution was not recorded: there is no handler or action span. A filter such as validation may have ended the request first, or WithCodeAtlasHandlerSpan is not enabled for this endpoint.";
     private static readonly TimeSpan ServerSpanGrace = TimeSpan.FromSeconds(5);
 
@@ -18,10 +19,10 @@ public static class TraceAnalyzer
     {
         var byId = spans.ToDictionary(s => s.SpanId);
         var children = spans
-            .Where(s => s.ParentSpanId is { } p && byId.ContainsKey(p) && !InCycle(s, byId))
+            .Where(s => s.ParentSpanId is { } p && byId.ContainsKey(p) && !OnCycle(s, byId))
             .GroupBy(s => s.ParentSpanId!)
             .ToDictionary(g => g.Key, g => g.OrderBy(s => s.StartUnixNano).ToList());
-        var roots = spans.Where(s => s.ParentSpanId is not { } p || !byId.ContainsKey(p) || InCycle(s, byId)).OrderBy(s => s.StartUnixNano);
+        var roots = spans.Where(s => s.ParentSpanId is not { } p || !byId.ContainsKey(p) || OnCycle(s, byId)).OrderBy(s => s.StartUnixNano);
         var nowNanos = (ulong)now.ToUnixTimeMilliseconds() * 1_000_000;
 
         NodeView Build(SpanRecord span)
@@ -29,7 +30,8 @@ public static class TraceAnalyzer
             var kids = children.GetValueOrDefault(span.SpanId)?.Select(Build).ToList() ?? [];
             var kind = KindOf(span);
             var gaps = new List<Gap>();
-            if (span.ParentSpanId is { } parent && (!byId.ContainsKey(parent) || InCycle(span, byId))) gaps.Add(new("missing-parent", MissingParent));
+            if (span.ParentSpanId is { } parent && !byId.ContainsKey(parent)) gaps.Add(new("missing-parent", MissingParent));
+            if (OnCycle(span, byId)) gaps.Add(new("parent-cycle", ParentCycle));
             if (kind is "browser-request" or "http-client" && !Descendants(kids).Any(k => k.Kind == "server") && nowNanos > span.EndUnixNano + (ulong)ServerSpanGrace.Ticks * 100)
                 gaps.Add(new("no-server-span", NoServerSpan));
             if (kids.Count > 0 && Uncovered(span, kids) is var ms and >= 1)
@@ -87,11 +89,15 @@ public static class TraceAnalyzer
             a.GetValueOrDefault("codeatlas.code.evidence") as string ?? "executed");
     }
 
-    private static bool InCycle(SpanRecord span, IReadOnlyDictionary<string, SpanRecord> byId)
+    // True only for spans that are themselves part of a parent cycle; a span merely below a cycle keeps its parent.
+    private static bool OnCycle(SpanRecord span, IReadOnlyDictionary<string, SpanRecord> byId)
     {
-        var seen = new HashSet<string> { span.SpanId };
+        var seen = new HashSet<string>();
         for (var current = span; current.ParentSpanId is { } parent && byId.TryGetValue(parent, out var next); current = next)
-            if (!seen.Add(next.SpanId)) return true;
+        {
+            if (next.SpanId == span.SpanId) return true;
+            if (!seen.Add(next.SpanId)) return false;
+        }
         return false;
     }
 

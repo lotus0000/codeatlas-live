@@ -119,7 +119,8 @@ public sealed class PdbSourceMap(IReadOnlyList<string> roots) : IDisposable
         lock (_lock)
         {
             if (_cache.TryGetValue(path, out var cached) && cached.WrittenAt == writtenAt) return cached.Value;
-            cached.Value?.Dispose();
+            // The replaced entry is not disposed: a lookup on another thread may still be reading it. It holds no file
+            // handle (everything is read into memory), so the garbage collector frees it.
             var loaded = Open(path);
             _cache[path] = (writtenAt, loaded);
             return loaded;
@@ -128,10 +129,14 @@ public sealed class PdbSourceMap(IReadOnlyList<string> roots) : IDisposable
 
     private static Loaded? Open(string path)
     {
-        var pe = new PEReader(System.IO.File.OpenRead(path));
+        // Read into memory: no file stays open or mapped, so rebuilding the app (which rewrites these files) never
+        // fails or races with a lookup.
+        PEReader pe;
+        try { pe = new PEReader(System.Collections.Immutable.ImmutableArray.Create(System.IO.File.ReadAllBytes(path))); }
+        catch (IOException) { return null; }
         try
         {
-            if (!pe.TryOpenAssociatedPortablePdb(path, p => System.IO.File.Exists(p) ? System.IO.File.OpenRead(p) : null, out var provider, out _) || provider is null)
+            if (!pe.TryOpenAssociatedPortablePdb(path, p => System.IO.File.Exists(p) ? new MemoryStream(System.IO.File.ReadAllBytes(p)) : null, out var provider, out _) || provider is null)
             {
                 pe.Dispose();
                 return null;

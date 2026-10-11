@@ -132,4 +132,18 @@ public class IngestTests
 
         Assert.Equal(allowed, response.Headers.Contains("Access-Control-Allow-Origin"));
     }
+
+    [Fact]
+    public async Task A_2000_level_span_chain_can_be_fetched()
+    {
+        await using var host = await CollectorHost.StartAsync();
+        var trace = TestOtlp.TraceId(42);
+        var chain = Enumerable.Range(1, 2000).Select(i => TestOtlp.Span(trace, TestOtlp.SpanId(i), i == 1 ? null : TestOtlp.SpanId(i - 1), $"s{i}", SpanKind.Internal, i, 3000));
+        (await TestOtlp.PostAsync(host.Client, TestOtlp.Request("api", "s", chain))).Dispose();
+
+        using var response = await host.Client.GetAsync($"api/traces/{trace}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("\"s2000\"", await response.Content.ReadAsStringAsync());
+    }
 }

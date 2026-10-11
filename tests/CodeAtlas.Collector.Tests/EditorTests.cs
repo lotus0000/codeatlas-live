@@ -175,4 +175,32 @@ public sealed class EditorTests : IDisposable
         Assert.Equal(HttpStatusCode.BadGateway, response.StatusCode);
         Assert.True(clock.Elapsed < TimeSpan.FromSeconds(10));
     }
+
+    [Fact]
+    public async Task An_editor_that_cannot_be_started_is_reported_not_crashed()
+    {
+        var notExecutable = Path.Combine(_root, "not-executable.sh");
+        File.WriteAllText(notExecutable, "#!/bin/sh\n"); // no execute permission
+
+        await using var host = await StartAsync(editor: notExecutable);
+        using var response = await host.Client.SendAsync(Open(Identity(), await TokenAsync(host)));
+
+        Assert.Equal(HttpStatusCode.BadGateway, response.StatusCode);
+        Assert.Contains("could not be started", await response.Content.ReadAsStringAsync());
+    }
+
+    [Theory]
+    [InlineData(true, "code.cmd")]
+    [InlineData(false, "code")]
+    public void Windows_lookup_uses_PATHEXT_and_never_picks_the_extensionless_script(bool windows, string expected)
+    {
+        var bin = Path.Combine(_root, "bin");
+        Directory.CreateDirectory(bin);
+        File.WriteAllText(Path.Combine(bin, "code"), "");
+        File.WriteAllText(Path.Combine(bin, "code.cmd"), "");
+
+        var found = CodeAtlas.Collector.Editor.EditorLauncher.FindOnPath("code", bin, ".COM;.EXE;.BAT;.CMD", windows);
+
+        Assert.Equal(Path.Combine(bin, expected), found);
+    }
 }

@@ -108,4 +108,21 @@ public class ExplainerTests
         Assert.Contains("handler OrderEndpoints.Create: 5.0 ms of this span is not covered", Text(view, "visibility"));
         Assert.Equal("Only requests that your app's own sampler records are visible.", Text(view, "sampling"));
     }
+
+    [Fact]
+    public void Missing_attributes_are_said_to_be_missing_not_guessed()
+    {
+        var store = new TraceStore(new StoreLimits());
+        store.Add(TestOtlp.Request("web", "codeatlas-web", [
+            TestOtlp.Span(T, TestOtlp.SpanId(1), null, "interaction: Save", SpanKind.Internal, 0, 0, ("codeatlas.interaction.name", "Save")),
+        ]));
+        store.Add(TestOtlp.Request("api", "Microsoft.AspNetCore", [
+            TestOtlp.Span(T, TestOtlp.SpanId(2), TestOtlp.SpanId(1), "/x", SpanKind.Server, 1, 4),
+        ]));
+
+        var view = TraceAnalyzer.Analyze(T, store.Get(T)!, false, Later);
+
+        Assert.Equal("The interaction \"Save\" is linked to this request (how it was linked is not recorded).", Text(view, "entry"));
+        Assert.Equal("Request /x finished in 3.0 ms (status not recorded).", Text(view, "request"));
+    }
 }
