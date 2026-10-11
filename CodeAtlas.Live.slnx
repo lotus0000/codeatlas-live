@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/samples/">
+    <Project Path="samples/MinimalApiSample/MinimalApiSample.csproj" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/CodeAtlas.AspNetCore/CodeAtlas.AspNetCore.csproj" />
     <Project Path="src/CodeAtlas.Collector/CodeAtlas.Collector.csproj" />
@@ -8,5 +11,6 @@
     <Project Path="tests/CodeAtlas.AspNetCore.Tests/CodeAtlas.AspNetCore.Tests.csproj" />
     <Project Path="tests/CodeAtlas.Collector.Tests/CodeAtlas.Collector.Tests.csproj" />
     <Project Path="tests/CodeAtlas.Otlp.Tests/CodeAtlas.Otlp.Tests.csproj" />
+    <Project Path="tests/Samples.Tests/Samples.Tests.csproj" />
   </Folder>
 </Solution>
