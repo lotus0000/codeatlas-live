@@ -1,0 +1,415 @@
+{
+  "summary": {
+    "traceId": "000000000000000000000000000000a1",
+    "startUnixNano": "1700000000000000000",
+    "durationMs": 62,
+    "interaction": "Create order",
+    "correlation": "explicit",
+    "method": "POST",
+    "route": "/api/orders",
+    "statusCode": 201,
+    "hasError": false,
+    "spanCount": 8,
+    "sampling": "codeatlas"
+  },
+  "roots": [
+    {
+      "span": {
+        "traceId": "000000000000000000000000000000a1",
+        "spanId": "0000000000000101",
+        "parentSpanId": null,
+        "name": "interaction: Create order",
+        "kind": "internal",
+        "service": "sample-web",
+        "scope": "codeatlas-web",
+        "startUnixNano": "1700000000000000000",
+        "endUnixNano": "1700000000062000000",
+        "status": "unset",
+        "statusMessage": null,
+        "attributes": {
+          "codeatlas.interaction.name": "Create order",
+          "codeatlas.correlation": "explicit"
+        },
+        "events": [],
+        "resource": {
+          "service.name": "sample-web"
+        },
+        "durationMs": 62
+      },
+      "kind": "interaction",
+      "evidence": "executed",
+      "correlation": "explicit",
+      "code": null,
+      "gaps": [
+        {
+          "kind": "uncovered-time",
+          "message": "3.0 ms of this span is not covered by any child span. That time is unexplained by telemetry; it does not mean nothing ran."
+        }
+      ],
+      "children": [
+        {
+          "span": {
+            "traceId": "000000000000000000000000000000a1",
+            "spanId": "0000000000000102",
+            "parentSpanId": "0000000000000101",
+            "name": "POST /api/orders",
+            "kind": "client",
+            "service": "sample-web",
+            "scope": "codeatlas-web",
+            "startUnixNano": "1700000000001000000",
+            "endUnixNano": "1700000000060000000",
+            "status": "unset",
+            "statusMessage": null,
+            "attributes": {
+              "http.request.method": "POST",
+              "url.path": "/api/orders",
+              "http.response.status_code": 201,
+              "codeatlas.correlation": "explicit"
+            },
+            "events": [],
+            "resource": {
+              "service.name": "sample-web"
+            },
+            "durationMs": 59
+          },
+          "kind": "browser-request",
+          "evidence": "executed",
+          "correlation": "explicit",
+          "code": null,
+          "gaps": [
+            {
+              "kind": "uncovered-time",
+              "message": "3.0 ms of this span is not covered by any child span. That time is unexplained by telemetry; it does not mean nothing ran."
+            }
+          ],
+          "children": [
+            {
+              "span": {
+                "traceId": "000000000000000000000000000000a1",
+                "spanId": "0000000000000103",
+                "parentSpanId": "0000000000000102",
+                "name": "POST /api/orders",
+                "kind": "server",
+                "service": "MinimalApiSample",
+                "scope": "Microsoft.AspNetCore",
+                "startUnixNano": "1700000000002000000",
+                "endUnixNano": "1700000000058000000",
+                "status": "unset",
+                "statusMessage": null,
+                "attributes": {
+                  "http.request.method": "POST",
+                  "http.route": "/api/orders",
+                  "url.path": "/api/orders",
+                  "http.response.status_code": 201
+                },
+                "events": [],
+                "resource": {
+                  "service.name": "MinimalApiSample",
+                  "codeatlas.sampling": "codeatlas"
+                },
+                "durationMs": 56
+              },
+              "kind": "server",
+              "evidence": "executed",
+              "correlation": null,
+              "code": null,
+              "gaps": [
+                {
+                  "kind": "uncovered-time",
+                  "message": "2.0 ms of this span is not covered by any child span. That time is unexplained by telemetry; it does not mean nothing ran."
+                }
+              ],
+              "children": [
+                {
+                  "span": {
+                    "traceId": "000000000000000000000000000000a1",
+                    "spanId": "0000000000000104",
+                    "parentSpanId": "0000000000000103",
+                    "name": "endpoint POST /api/orders",
+                    "kind": "internal",
+                    "service": "MinimalApiSample",
+                    "scope": "CodeAtlas.Components",
+                    "startUnixNano": "1700000000003000000",
+                    "endUnixNano": "1700000000057000000",
+                    "status": "unset",
+                    "statusMessage": null,
+                    "attributes": {
+                      "codeatlas.component": "endpoint",
+                      "codeatlas.code.function": "Fixture.Orders.LoadAsync",
+                      "codeatlas.code.mvid": "0f0f0f0f-0000-4000-8000-000000000001",
+                      "codeatlas.code.token": 100663299,
+                      "codeatlas.code.assembly_path": "/repo/app/Fixture.dll",
+                      "codeatlas.code.evidence": "routing"
+                    },
+                    "events": [],
+                    "resource": {
+                      "service.name": "MinimalApiSample",
+                      "codeatlas.sampling": "codeatlas"
+                    },
+                    "durationMs": 54
+                  },
+                  "kind": "endpoint",
+                  "evidence": "executed",
+                  "correlation": null,
+                  "code": {
+                    "assembly": "/repo/app/Fixture.dll",
+                    "mvid": "0f0f0f0f-0000-4000-8000-000000000001",
+                    "token": 100663299,
+                    "function": "Fixture.Orders.LoadAsync",
+                    "evidence": "routing"
+                  },
+                  "gaps": [
+                    {
+                      "kind": "uncovered-time",
+                      "message": "2.0 ms of this span is not covered by any child span. That time is unexplained by telemetry; it does not mean nothing ran."
+                    }
+                  ],
+                  "children": [
+                    {
+                      "span": {
+                        "traceId": "000000000000000000000000000000a1",
+                        "spanId": "0000000000000105",
+                        "parentSpanId": "0000000000000104",
+                        "name": "handler Orders.LoadAsync",
+                        "kind": "internal",
+                        "service": "MinimalApiSample",
+                        "scope": "CodeAtlas.Components",
+                        "startUnixNano": "1700000000004000000",
+                        "endUnixNano": "1700000000056000000",
+                        "status": "unset",
+                        "statusMessage": null,
+                        "attributes": {
+                          "codeatlas.component": "handler",
+                          "codeatlas.code.function": "Fixture.Orders.LoadAsync",
+                          "codeatlas.code.mvid": "0f0f0f0f-0000-4000-8000-000000000001",
+                          "codeatlas.code.token": 100663299,
+                          "codeatlas.code.assembly_path": "/repo/app/Fixture.dll",
+                          "codeatlas.code.evidence": "executed"
+                        },
+                        "events": [],
+                        "resource": {
+                          "service.name": "MinimalApiSample",
+                          "codeatlas.sampling": "codeatlas"
+                        },
+                        "durationMs": 52
+                      },
+                      "kind": "handler",
+                      "evidence": "executed",
+                      "correlation": null,
+                      "code": {
+                        "assembly": "/repo/app/Fixture.dll",
+                        "mvid": "0f0f0f0f-0000-4000-8000-000000000001",
+                        "token": 100663299,
+                        "function": "Fixture.Orders.LoadAsync",
+                        "evidence": "executed"
+                      },
+                      "gaps": [
+                        {
+                          "kind": "uncovered-time",
+                          "message": "4.0 ms of this span is not covered by any child span. That time is unexplained by telemetry; it does not mean nothing ran."
+                        }
+                      ],
+                      "children": [
+                        {
+                          "span": {
+                            "traceId": "000000000000000000000000000000a1",
+                            "spanId": "0000000000000106",
+                            "parentSpanId": "0000000000000105",
+                            "name": "SELECT products",
+                            "kind": "client",
+                            "service": "MinimalApiSample",
+                            "scope": "Npgsql",
+                            "startUnixNano": "1700000000005000000",
+                            "endUnixNano": "1700000000015000000",
+                            "status": "unset",
+                            "statusMessage": null,
+                            "attributes": {
+                              "db.system.name": "postgresql",
+                              "db.namespace": "shop",
+                              "db.query.summary": "SELECT products"
+                            },
+                            "events": [],
+                            "resource": {
+                              "service.name": "MinimalApiSample",
+                              "codeatlas.sampling": "codeatlas"
+                            },
+                            "durationMs": 10
+                          },
+                          "kind": "database",
+                          "evidence": "executed",
+                          "correlation": null,
+                          "code": null,
+                          "gaps": [],
+                          "children": []
+                        },
+                        {
+                          "span": {
+                            "traceId": "000000000000000000000000000000a1",
+                            "spanId": "0000000000000107",
+                            "parentSpanId": "0000000000000105",
+                            "name": "INSERT orders",
+                            "kind": "client",
+                            "service": "MinimalApiSample",
+                            "scope": "Npgsql",
+                            "startUnixNano": "1700000000016000000",
+                            "endUnixNano": "1700000000040000000",
+                            "status": "unset",
+                            "statusMessage": null,
+                            "attributes": {
+                              "db.system.name": "postgresql",
+                              "db.namespace": "shop",
+                              "db.query.summary": "INSERT orders"
+                            },
+                            "events": [],
+                            "resource": {
+                              "service.name": "MinimalApiSample",
+                              "codeatlas.sampling": "codeatlas"
+                            },
+                            "durationMs": 24
+                          },
+                          "kind": "database",
+                          "evidence": "executed",
+                          "correlation": null,
+                          "code": null,
+                          "gaps": [],
+                          "children": []
+                        },
+                        {
+                          "span": {
+                            "traceId": "000000000000000000000000000000a1",
+                            "spanId": "0000000000000108",
+                            "parentSpanId": "0000000000000105",
+                            "name": "GET",
+                            "kind": "client",
+                            "service": "MinimalApiSample",
+                            "scope": "System.Net.Http",
+                            "startUnixNano": "1700000000041000000",
+                            "endUnixNano": "1700000000055000000",
+                            "status": "unset",
+                            "statusMessage": null,
+                            "attributes": {
+                              "http.request.method": "GET",
+                              "url.full": "https://stock.example/api/check",
+                              "http.response.status_code": 200
+                            },
+                            "events": [],
+                            "resource": {
+                              "service.name": "MinimalApiSample",
+                              "codeatlas.sampling": "codeatlas"
+                            },
+                            "durationMs": 14
+                          },
+                          "kind": "http-client",
+                          "evidence": "executed",
+                          "correlation": null,
+                          "code": null,
+                          "gaps": [
+                            {
+                              "kind": "no-server-span",
+                              "message": "No server span received for this request. The backend may not be instrumented, the span may be sampled out, or its export was delayed or failed."
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "truncated": false,
+  "explanation": [
+    {
+      "kind": "entry",
+      "text": "The interaction \"Create order\" triggered this request (explicit link).",
+      "spanIds": [
+        "0000000000000101"
+      ]
+    },
+    {
+      "kind": "request",
+      "text": "POST /api/orders returned 201 in 56.0 ms.",
+      "spanIds": [
+        "0000000000000103"
+      ]
+    },
+    {
+      "kind": "executed",
+      "text": "Executed Fixture.Orders.LoadAsync (handler).",
+      "spanIds": [
+        "0000000000000105"
+      ]
+    },
+    {
+      "kind": "database",
+      "text": "2 database operations: SELECT products ×1, INSERT orders ×1.",
+      "spanIds": [
+        "0000000000000106",
+        "0000000000000107"
+      ]
+    },
+    {
+      "kind": "http",
+      "text": "1 outgoing HTTP call: GET https://stock.example/api/check → 200.",
+      "spanIds": [
+        "0000000000000108"
+      ]
+    },
+    {
+      "kind": "slowest",
+      "text": "Slowest recorded operations: POST /api/orders (59.0 ms), POST /api/orders (56.0 ms), endpoint POST /api/orders (54.0 ms).",
+      "spanIds": [
+        "0000000000000102",
+        "0000000000000103",
+        "0000000000000104"
+      ]
+    },
+    {
+      "kind": "visibility",
+      "text": "interaction: Create order: 3.0 ms of this span is not covered by any child span. That time is unexplained by telemetry; it does not mean nothing ran.",
+      "spanIds": [
+        "0000000000000101"
+      ]
+    },
+    {
+      "kind": "visibility",
+      "text": "POST /api/orders: 3.0 ms of this span is not covered by any child span. That time is unexplained by telemetry; it does not mean nothing ran.",
+      "spanIds": [
+        "0000000000000102"
+      ]
+    },
+    {
+      "kind": "visibility",
+      "text": "POST /api/orders: 2.0 ms of this span is not covered by any child span. That time is unexplained by telemetry; it does not mean nothing ran.",
+      "spanIds": [
+        "0000000000000103"
+      ]
+    },
+    {
+      "kind": "visibility",
+      "text": "endpoint POST /api/orders: 2.0 ms of this span is not covered by any child span. That time is unexplained by telemetry; it does not mean nothing ran.",
+      "spanIds": [
+        "0000000000000104"
+      ]
+    },
+    {
+      "kind": "visibility",
+      "text": "handler Orders.LoadAsync: 4.0 ms of this span is not covered by any child span. That time is unexplained by telemetry; it does not mean nothing ran.",
+      "spanIds": [
+        "0000000000000105"
+      ]
+    },
+    {
+      "kind": "visibility",
+      "text": "GET: No server span received for this request. The backend may not be instrumented, the span may be sampled out, or its export was delayed or failed.",
+      "spanIds": [
+        "0000000000000108"
+      ]
+    }
+  ]
+}

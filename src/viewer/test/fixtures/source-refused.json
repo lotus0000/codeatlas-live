@@ -1,0 +1,16 @@
+{
+  "location": {
+    "found": false,
+    "reason": "The assembly was rebuilt after this span was recorded (MVID differs). Repeat the request.",
+    "file": null,
+    "relativePath": null,
+    "displayStart": 0,
+    "displayEnd": 0,
+    "navigationLine": 0,
+    "executableLines": [],
+    "kind": null,
+    "stateMachine": false,
+    "mapping": null
+  },
+  "text": null
+}

@@ -1,0 +1,130 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import '@fontsource-variable/geist';
+@import '@fontsource-variable/geist-mono';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: #ffffff;
+  --foreground: #18181b;
+  --card: #ffffff;
+  --card-foreground: #18181b;
+  --popover: #ffffff;
+  --popover-foreground: #18181b;
+  --primary: #18181b;
+  --primary-foreground: #fafafa;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --accent: #f4f4f5;
+  --accent-foreground: #18181b;
+  --destructive: #dc2626;
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --ring: #a1a1aa;
+  --radius: 0.5rem;
+  /* Evidence kinds (spec §7.2) and states. */
+  --executed: #2563eb;
+  --executed-soft: #dbeafe;
+  --routing: #7c3aed;
+  --routing-soft: #ede9fe;
+  --heuristic: #b45309;
+  --gap: #b45309;
+  --success: #15803d;
+  --error: #dc2626;
+  --error-soft: #fee2e2;
+  --slow: #c2410c;
+  --bar: #93c5fd;
+}
+
+.dark {
+  --background: #09090b;
+  --foreground: #ededf0;
+  --card: #0c0c0f;
+  --card-foreground: #ededf0;
+  --popover: #17171b;
+  --popover-foreground: #ededf0;
+  --primary: #ededf0;
+  --primary-foreground: #09090b;
+  --secondary: #17171b;
+  --secondary-foreground: #ededf0;
+  --muted: #17171b;
+  --muted-foreground: #8b8b94;
+  --accent: #1f1f24;
+  --accent-foreground: #ededf0;
+  --destructive: #f87171;
+  --border: #26262b;
+  --input: #26262b;
+  --ring: #52525b;
+  --executed: #93c5fd;
+  --executed-soft: #172554;
+  --routing: #c4b5fd;
+  --routing-soft: #2e1065;
+  --heuristic: #fbbf24;
+  --gap: #fde68a;
+  --success: #4ade80;
+  --error: #fca5a5;
+  --error-soft: #450a0a;
+  --slow: #fdba74;
+  --bar: #3b82f6;
+}
+
+@theme inline {
+  --font-sans: 'Geist Variable', system-ui, sans-serif;
+  --font-mono: 'Geist Mono Variable', ui-monospace, monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-executed: var(--executed);
+  --color-executed-soft: var(--executed-soft);
+  --color-routing: var(--routing);
+  --color-routing-soft: var(--routing-soft);
+  --color-heuristic: var(--heuristic);
+  --color-gap: var(--gap);
+  --color-success: var(--success);
+  --color-error: var(--error);
+  --color-error-soft: var(--error-soft);
+  --color-slow: var(--slow);
+  --color-bar: var(--bar);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background font-sans text-foreground antialiased;
+  }
+}
+
+/* Monaco decorations: the verified declaration range and the PDB's executable lines. */
+.ca-declaration {
+  background: color-mix(in oklab, var(--executed) 10%, transparent);
+}
+.ca-executable {
+  background: var(--executed);
+  border-radius: 9999px;
+  width: 6px !important;
+  height: 6px !important;
+  margin: 6px 0 0 8px;
+}

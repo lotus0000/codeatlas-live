@@ -25,4 +25,21 @@ check "Release app assembly has no CodeAtlas reference"       '! grep -aq "CodeA
 check "Release has no Google.Protobuf (CodeAtlas-only here)"  '[ ! -f "$work/Release/Google.Protobuf.dll" ]'
 check "Release keeps the app's OpenTelemetry.dll"             '[ -f "$work/Release/OpenTelemetry.dll" ]'
 check "Release keeps the app's OTLP exporter"                 '[ -f "$work/Release/OpenTelemetry.Exporter.OpenTelemetryProtocol.dll" ]'
+# The samples: Debug and Release published into separate folders from the same tree.
+for sample in MinimalApiSample ControllerSample; do
+  for configuration in Debug Release; do
+    dotnet publish "$root/samples/$sample" -c "$configuration" -o "$work/$sample-$configuration" --nologo -v q > /dev/null
+  done
+  check "$sample Debug contains CodeAtlas.AspNetCore.dll"          "[ -f \"\$work/$sample-Debug/CodeAtlas.AspNetCore.dll\" ]"
+  check "$sample Release has no CodeAtlas assemblies"               "! ls \"\$work/$sample-Release\" | grep -qi codeatlas"
+  check "$sample Release deps.json never mentions CodeAtlas"         "! grep -q 'CodeAtlas\.' \"\$work/$sample-Release/$sample.deps.json\""
+  check "$sample Release app assembly has no CodeAtlas reference"    "! grep -aq 'CodeAtlas.AspNetCore' \"\$work/$sample-Release/$sample.dll\""
+done
+check "ControllerSample Release keeps its own OpenTelemetry.dll"   '[ -f "$work/ControllerSample-Release/OpenTelemetry.dll" ]'
+
+# The sample web app's production build.
+(cd "$root/src/web" && npm ci --silent && npm run build --silent) > /dev/null
+(cd "$root/samples/MinimalApiSample.Web" && npm ci --silent && npx vite build --outDir "$work/web" --emptyOutDir --logLevel silent) > /dev/null
+check "sample web build contains the app"                          'grep -rq "Create Order" "$work/web/assets"'
+check "sample web build has no CodeAtlas runtime or collector path" '! grep -rqE "traceparent|codeatlas-web|interaction: |codeatlas/v1" "$work/web/assets"'
 exit $failed

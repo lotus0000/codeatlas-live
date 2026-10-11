@@ -6,3 +6,8 @@ node_modules/
 *.user
 .superpowers/
 src/web/dist/
+src/CodeAtlas.Collector/wwwroot/
+samples/MinimalApiSample.Web/dist/
+tests/e2e/test-results/
+tests/e2e/playwright-report/
+tests/e2e/.recorder/

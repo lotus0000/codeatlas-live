@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "types": ["vite/client", "node"],
+    // @codeatlas/web is linked from src/web, which has its own axios (dev dependency). One axios for the whole
+    // program, so the package's Axios augmentation applies to the axios this app uses. Not needed with the packed .tgz.
+    "paths": { "axios": ["./node_modules/axios"] }
+  },
+  "include": ["src", "test", "vite.config.ts"]
+}

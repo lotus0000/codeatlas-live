@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <PackageReference Include="Npgsql" Version="10.0.3" />
+  </ItemGroup>
+
+  <!-- CodeAtlas in Debug only. Inside this repo it is a project reference; your own app references the
+       CodeAtlas.AspNetCore package the same way (docs/integration.md). -->
+  <ItemGroup Condition="'$(Configuration)' == 'Debug'">
+    <ProjectReference Include="../../src/CodeAtlas.AspNetCore/CodeAtlas.AspNetCore.csproj" />
+  </ItemGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <DefineConstants>$(DefineConstants);CODEATLAS</DefineConstants>
+  </PropertyGroup>
+</Project>

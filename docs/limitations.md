@@ -1,7 +1,6 @@
 # Known limitations
 
-Backend integration (`CodeAtlas.AspNetCore`, Plan 1) and collector (`CodeAtlas.Collector`, Plan 2). Plan 5 extends
-this file with browser and viewer limitations.
+What CodeAtlas Live does not do, by design, and the known minor issues deferred from each plan's final review.
 
 ## By design
 
@@ -15,6 +14,11 @@ this file with browser and viewer limitations.
 | Tags that the app's own instrumentation adds (other than headers, client address and `enduser.*`) are exported. | CodeAtlas cannot know which custom tags are sensitive. |
 | Database tracing is Npgsql only. | MVP scope. |
 | In Development, an exception handled by the developer exception page gives a server span with status 500 but no "unhandled" flag; the exception is on the endpoint/action/handler span. | The page handles it inside the pipeline. |
+| A request that starts within 1 s of a click or submit, without `trackInteraction`, is linked to that click by timing. A follow-up or polling request can be linked too. | It is a heuristic; the viewer marks those links "heuristic" (spec §6.2). Use `trackInteraction` for proof. |
+| Interaction labels may use button or link text. | Readable labels; `textLabels: false` falls back to the tag name. Typed values are never read. |
+| Work outside a request (start-up, background services) appears as separate root traces without an interaction. | There is no request to attach it to. |
+| The samples' database spans need Docker for Postgres; CodeAtlas itself does not. | Npgsql is the MVP's only database instrumentation. |
+| The demo's Postgres container is removed when the demo stops (`--rm`); sample data does not persist between runs. | A clean demo every time. |
 
 ## Deferred minor issues
 
@@ -61,3 +65,27 @@ is unchanged; the host stop flushes queued spans.
 | An old handle's `shutdown()` after a re-init also unregisters the newer runtime; a second `shutdown()` shuts the provider down twice. | Tracing stops after unusual HMR/StrictMode sequences until reload. | Yes |
 | `pack-local.sh` does not clean `src/web/dist` before building. | Files from renamed or removed sources could ship in the local tarball. | Yes (local feed only) |
 | When the app has wrapped `fetch`, the runtime adds a hidden same-origin `<iframe>` to get a native fetch for OTLP exports. | One extra hidden element under `<html>` in development. | By design |
+
+## Viewer: deferred minor issues (Plan 4 final review)
+
+| Issue | Impact | Safe to defer? |
+|---|---|---|
+| Monaco's hover is not bundled, so the executable-line dot has no tooltip. | The blue gutter dot is unexplained. | Yes (cosmetic) |
+| After a collector restart, old traces stay in the list until reload. | Clicking one says it was evicted. | Yes |
+| The error banner is cleared only by a successful list reload; a failed trace load keeps "Loading trace…". | A stale error message can stay visible. | Yes |
+| Switching away from an evicted trace briefly shows the "no longer in the collector" text. | A short flash of the wrong message. | Yes |
+| "It ran inside …" picks the nearest executed ancestor even across a service boundary. | A downstream service's database span can name the caller's handler. | Yes (multi-service traces only) |
+| The tree has no arrow-key navigation; every row is a tab stop. | Keyboard use of large traces is slow. | Yes |
+| Selecting a span from Explain or the Parent link does not scroll it into view; switching tabs resets collapsed nodes. | The selection can be off-screen. | Yes |
+| The `parent-cycle` gap kind has no short label in the tree. | The chip shows the raw kind (full wording in the tooltip). | Yes |
+| A 0 ms heuristic bar renders as a small dashed glyph. | Cosmetic. | Yes |
+
+## Samples, demo and E2E: deferred minor issues (Plan 5 final review)
+
+| Issue | Impact | Safe to defer? |
+|---|---|---|
+| On a cold NuGet cache or a slow machine, the parallel first builds can exceed the demo's 2-minute start wait. | "did not start"; running the demo again works. | Yes |
+| `demo.sh` assumes Linux tools (`ss`, `setsid`, `python3`, `curl`) and `dotnet` on `PATH`, and does not check them first. | A missing tool shows up as a start-up timeout. | Yes (code-server/Linux is the target) |
+| A Ctrl+C that lands exactly during a readiness check can leave the script polling until the timeout. | Up to 2 minutes before it exits; cleanup still runs. | Yes |
+| The `dotnet tool install` line has no `--version`. | A same-named package on nuget.org could be picked. | Yes (local feed first in practice) |
+| The source-mapping regression checks lambdas only indirectly. | A wrong lambda mapping would not be caught by that test. | Yes |

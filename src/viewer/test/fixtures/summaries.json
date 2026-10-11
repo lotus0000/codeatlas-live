@@ -1,0 +1,41 @@
+[
+  {
+    "traceId": "000000000000000000000000000000a3",
+    "startUnixNano": "1700000120000000000",
+    "durationMs": 30,
+    "interaction": "Refresh",
+    "correlation": "heuristic",
+    "method": "GET",
+    "route": "/api/products",
+    "statusCode": 200,
+    "hasError": false,
+    "spanCount": 7,
+    "sampling": "codeatlas"
+  },
+  {
+    "traceId": "000000000000000000000000000000a2",
+    "startUnixNano": "1700000060000000000",
+    "durationMs": 26,
+    "interaction": "Create order",
+    "correlation": "explicit",
+    "method": "POST",
+    "route": "/api/orders",
+    "statusCode": 500,
+    "hasError": true,
+    "spanCount": 6,
+    "sampling": "codeatlas"
+  },
+  {
+    "traceId": "000000000000000000000000000000a1",
+    "startUnixNano": "1700000000000000000",
+    "durationMs": 62,
+    "interaction": "Create order",
+    "correlation": "explicit",
+    "method": "POST",
+    "route": "/api/orders",
+    "statusCode": 201,
+    "hasError": false,
+    "spanCount": 8,
+    "sampling": "codeatlas"
+  }
+]
