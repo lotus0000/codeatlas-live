@@ -1,0 +1,348 @@
+{
+  "summary": {
+    "traceId": "000000000000000000000000000000a2",
+    "startUnixNano": "1700000060000000000",
+    "durationMs": 26,
+    "interaction": "Create order",
+    "correlation": "explicit",
+    "method": "POST",
+    "route": "/api/orders",
+    "statusCode": 500,
+    "hasError": true,
+    "spanCount": 6,
+    "sampling": "codeatlas"
+  },
+  "roots": [
+    {
+      "span": {
+        "traceId": "000000000000000000000000000000a2",
+        "spanId": "0000000000000201",
+        "parentSpanId": null,
+        "name": "interaction: Create order",
+        "kind": "internal",
+        "service": "sample-web",
+        "scope": "codeatlas-web",
+        "startUnixNano": "1700000060000000000",
+        "endUnixNano": "1700000060026000000",
+        "status": "unset",
+        "statusMessage": null,
+        "attributes": {
+          "codeatlas.interaction.name": "Create order",
+          "codeatlas.correlation": "explicit"
+        },
+        "events": [],
+        "resource": {
+          "service.name": "sample-web"
+        },
+        "durationMs": 26
+      },
+      "kind": "interaction",
+      "evidence": "executed",
+      "correlation": "explicit",
+      "code": null,
+      "gaps": [
+        {
+          "kind": "uncovered-time",
+          "message": "2.0 ms of this span is not covered by any child span. That time is unexplained by telemetry; it does not mean nothing ran."
+        }
+      ],
+      "children": [
+        {
+          "span": {
+            "traceId": "000000000000000000000000000000a2",
+            "spanId": "0000000000000202",
+            "parentSpanId": "0000000000000201",
+            "name": "POST /api/orders",
+            "kind": "client",
+            "service": "sample-web",
+            "scope": "codeatlas-web",
+            "startUnixNano": "1700000060001000000",
+            "endUnixNano": "1700000060025000000",
+            "status": "unset",
+            "statusMessage": null,
+            "attributes": {
+              "http.request.method": "POST",
+              "url.path": "/api/orders",
+              "http.response.status_code": 500,
+              "codeatlas.correlation": "explicit"
+            },
+            "events": [],
+            "resource": {
+              "service.name": "sample-web"
+            },
+            "durationMs": 24
+          },
+          "kind": "browser-request",
+          "evidence": "executed",
+          "correlation": "explicit",
+          "code": null,
+          "gaps": [
+            {
+              "kind": "uncovered-time",
+              "message": "2.0 ms of this span is not covered by any child span. That time is unexplained by telemetry; it does not mean nothing ran."
+            }
+          ],
+          "children": [
+            {
+              "span": {
+                "traceId": "000000000000000000000000000000a2",
+                "spanId": "0000000000000203",
+                "parentSpanId": "0000000000000202",
+                "name": "POST /api/orders",
+                "kind": "server",
+                "service": "MinimalApiSample",
+                "scope": "Microsoft.AspNetCore",
+                "startUnixNano": "1700000060002000000",
+                "endUnixNano": "1700000060024000000",
+                "status": "error",
+                "statusMessage": null,
+                "attributes": {
+                  "http.request.method": "POST",
+                  "http.route": "/api/orders",
+                  "url.path": "/api/orders",
+                  "http.response.status_code": 500
+                },
+                "events": [],
+                "resource": {
+                  "service.name": "MinimalApiSample",
+                  "codeatlas.sampling": "codeatlas"
+                },
+                "durationMs": 22
+              },
+              "kind": "server",
+              "evidence": "executed",
+              "correlation": null,
+              "code": null,
+              "gaps": [
+                {
+                  "kind": "uncovered-time",
+                  "message": "2.0 ms of this span is not covered by any child span. That time is unexplained by telemetry; it does not mean nothing ran."
+                }
+              ],
+              "children": [
+                {
+                  "span": {
+                    "traceId": "000000000000000000000000000000a2",
+                    "spanId": "0000000000000204",
+                    "parentSpanId": "0000000000000203",
+                    "name": "endpoint POST /api/orders",
+                    "kind": "internal",
+                    "service": "MinimalApiSample",
+                    "scope": "CodeAtlas.Components",
+                    "startUnixNano": "1700000060003000000",
+                    "endUnixNano": "1700000060023000000",
+                    "status": "unset",
+                    "statusMessage": null,
+                    "attributes": {
+                      "codeatlas.component": "endpoint",
+                      "codeatlas.code.function": "Fixture.Orders.LoadAsync",
+                      "codeatlas.code.mvid": "0f0f0f0f-0000-4000-8000-000000000001",
+                      "codeatlas.code.token": 100663299,
+                      "codeatlas.code.assembly_path": "/repo/app/Fixture.dll",
+                      "codeatlas.code.evidence": "routing"
+                    },
+                    "events": [],
+                    "resource": {
+                      "service.name": "MinimalApiSample",
+                      "codeatlas.sampling": "codeatlas"
+                    },
+                    "durationMs": 20
+                  },
+                  "kind": "endpoint",
+                  "evidence": "executed",
+                  "correlation": null,
+                  "code": {
+                    "assembly": "/repo/app/Fixture.dll",
+                    "mvid": "0f0f0f0f-0000-4000-8000-000000000001",
+                    "token": 100663299,
+                    "function": "Fixture.Orders.LoadAsync",
+                    "evidence": "routing"
+                  },
+                  "gaps": [
+                    {
+                      "kind": "uncovered-time",
+                      "message": "3.0 ms of this span is not covered by any child span. That time is unexplained by telemetry; it does not mean nothing ran."
+                    }
+                  ],
+                  "children": [
+                    {
+                      "span": {
+                        "traceId": "000000000000000000000000000000a2",
+                        "spanId": "0000000000000205",
+                        "parentSpanId": "0000000000000204",
+                        "name": "handler Orders.LoadAsync",
+                        "kind": "internal",
+                        "service": "MinimalApiSample",
+                        "scope": "CodeAtlas.Components",
+                        "startUnixNano": "1700000060004000000",
+                        "endUnixNano": "1700000060021000000",
+                        "status": "error",
+                        "statusMessage": "Out of stock: SKU-42",
+                        "attributes": {
+                          "codeatlas.component": "handler",
+                          "codeatlas.code.function": "Fixture.Orders.LoadAsync",
+                          "codeatlas.code.mvid": "0f0f0f0f-0000-4000-8000-000000000001",
+                          "codeatlas.code.token": 100663299,
+                          "codeatlas.code.assembly_path": "/repo/app/Fixture.dll",
+                          "codeatlas.code.evidence": "executed"
+                        },
+                        "events": [
+                          {
+                            "name": "exception",
+                            "timeUnixNano": "1700000060020000000",
+                            "attributes": {
+                              "exception.type": "System.InvalidOperationException",
+                              "exception.message": "Out of stock: SKU-42",
+                              "exception.stacktrace": "System.InvalidOperationException: Out of stock: SKU-42\n   at Fixture.Stock.Reserve(String sku) in /repo/app/Stock.cs:line 9\n   at Fixture.Orders.LoadAsync(Int32 id) in /repo/app/Fixture.cs:line 15"
+                            }
+                          }
+                        ],
+                        "resource": {
+                          "service.name": "MinimalApiSample",
+                          "codeatlas.sampling": "codeatlas"
+                        },
+                        "durationMs": 17
+                      },
+                      "kind": "handler",
+                      "evidence": "executed",
+                      "correlation": null,
+                      "code": {
+                        "assembly": "/repo/app/Fixture.dll",
+                        "mvid": "0f0f0f0f-0000-4000-8000-000000000001",
+                        "token": 100663299,
+                        "function": "Fixture.Orders.LoadAsync",
+                        "evidence": "executed"
+                      },
+                      "gaps": [
+                        {
+                          "kind": "uncovered-time",
+                          "message": "4.0 ms of this span is not covered by any child span. That time is unexplained by telemetry; it does not mean nothing ran."
+                        }
+                      ],
+                      "children": [
+                        {
+                          "span": {
+                            "traceId": "000000000000000000000000000000a2",
+                            "spanId": "0000000000000206",
+                            "parentSpanId": "0000000000000205",
+                            "name": "SELECT products",
+                            "kind": "client",
+                            "service": "MinimalApiSample",
+                            "scope": "Npgsql",
+                            "startUnixNano": "1700000060005000000",
+                            "endUnixNano": "1700000060018000000",
+                            "status": "unset",
+                            "statusMessage": null,
+                            "attributes": {
+                              "db.system.name": "postgresql",
+                              "db.namespace": "shop",
+                              "db.query.summary": "SELECT products"
+                            },
+                            "events": [],
+                            "resource": {
+                              "service.name": "MinimalApiSample",
+                              "codeatlas.sampling": "codeatlas"
+                            },
+                            "durationMs": 13
+                          },
+                          "kind": "database",
+                          "evidence": "executed",
+                          "correlation": null,
+                          "code": null,
+                          "gaps": [],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "truncated": false,
+  "explanation": [
+    {
+      "kind": "entry",
+      "text": "The interaction \"Create order\" triggered this request (explicit link).",
+      "spanIds": [
+        "0000000000000201"
+      ]
+    },
+    {
+      "kind": "request",
+      "text": "POST /api/orders returned 500 in 22.0 ms.",
+      "spanIds": [
+        "0000000000000203"
+      ]
+    },
+    {
+      "kind": "executed",
+      "text": "Executed Fixture.Orders.LoadAsync (handler).",
+      "spanIds": [
+        "0000000000000205"
+      ]
+    },
+    {
+      "kind": "database",
+      "text": "1 database operation: SELECT products ×1.",
+      "spanIds": [
+        "0000000000000206"
+      ]
+    },
+    {
+      "kind": "slowest",
+      "text": "Slowest recorded operations: POST /api/orders (24.0 ms), POST /api/orders (22.0 ms), endpoint POST /api/orders (20.0 ms).",
+      "spanIds": [
+        "0000000000000202",
+        "0000000000000203",
+        "0000000000000204"
+      ]
+    },
+    {
+      "kind": "exception",
+      "text": "handler Orders.LoadAsync recorded System.InvalidOperationException: Out of stock: SKU-42.",
+      "spanIds": [
+        "0000000000000205"
+      ]
+    },
+    {
+      "kind": "visibility",
+      "text": "interaction: Create order: 2.0 ms of this span is not covered by any child span. That time is unexplained by telemetry; it does not mean nothing ran.",
+      "spanIds": [
+        "0000000000000201"
+      ]
+    },
+    {
+      "kind": "visibility",
+      "text": "POST /api/orders: 2.0 ms of this span is not covered by any child span. That time is unexplained by telemetry; it does not mean nothing ran.",
+      "spanIds": [
+        "0000000000000202"
+      ]
+    },
+    {
+      "kind": "visibility",
+      "text": "POST /api/orders: 2.0 ms of this span is not covered by any child span. That time is unexplained by telemetry; it does not mean nothing ran.",
+      "spanIds": [
+        "0000000000000203"
+      ]
+    },
+    {
+      "kind": "visibility",
+      "text": "endpoint POST /api/orders: 3.0 ms of this span is not covered by any child span. That time is unexplained by telemetry; it does not mean nothing ran.",
+      "spanIds": [
+        "0000000000000204"
+      ]
+    },
+    {
+      "kind": "visibility",
+      "text": "handler Orders.LoadAsync: 4.0 ms of this span is not covered by any child span. That time is unexplained by telemetry; it does not mean nothing ran.",
+      "spanIds": [
+        "0000000000000205"
+      ]
+    }
+  ]
+}

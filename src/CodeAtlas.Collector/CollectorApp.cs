@@ -68,6 +68,17 @@ public static class CollectorApp
         });
         app.UseDefaultFiles();
         app.UseStaticFiles();
+        // Until scripts/build-viewer.sh has run, "/" explains how to build the viewer instead of returning 404.
+        app.Use(async (context, next) =>
+        {
+            if (ViewerFallback.Applies(context.Request.Path, app.Environment.WebRootFileProvider))
+            {
+                context.Response.ContentType = "text/html; charset=utf-8";
+                await context.Response.WriteAsync(ViewerFallback.Html);
+                return;
+            }
+            await next();
+        });
         TraceEndpoints.Map(app);
         Ingest.IngestEndpoints.Map(app);
         Source.SourceEndpoints.Map(app);

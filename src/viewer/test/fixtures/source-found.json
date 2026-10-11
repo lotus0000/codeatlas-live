@@ -1,0 +1,21 @@
+{
+  "location": {
+    "found": true,
+    "reason": null,
+    "file": "/repo/app/Fixture.cs",
+    "relativePath": "app/Fixture.cs",
+    "displayStart": 13,
+    "displayEnd": 17,
+    "navigationLine": 13,
+    "executableLines": [
+      14,
+      15,
+      16,
+      17
+    ],
+    "kind": "method",
+    "stateMachine": true,
+    "mapping": "pdb + roslyn"
+  },
+  "text": "using System;\nusing System.Collections.Generic;\nusing System.Threading.Tasks;\n\nnamespace Fixture;\n\npublic class Orders\n{\n    public int Count(int a) => a + 1;\n\n    public int Count(string a) => a.Length;\n\n    public async Task<int> LoadAsync(int id)\n    {\n        await Task.Yield();\n        return id * 2;\n    }\n\n    public IEnumerable<int> Numbers()\n    {\n        yield return 1;\n        yield return 2;\n    }\n\n    public Func<int, int> MakeLambda() => x => x * 3;\n\n    public int WithLocal(int value)\n    {\n        return Twice(value);\n\n        static int Twice(int n) => n * 2;\n    }\n\n    public T Echo<T>(T value) => value;\n}\n\npublic class Prices(decimal rate)\n{\n    public decimal Rate { get; } = rate;\n}\n\npublic interface IOrders\n{\n    void Save();\n}\n"
+}

@@ -6,3 +6,4 @@ node_modules/
 *.user
 .superpowers/
 src/web/dist/
+src/CodeAtlas.Collector/wwwroot/
