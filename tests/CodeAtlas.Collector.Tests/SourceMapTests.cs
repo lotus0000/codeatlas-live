@@ -246,6 +246,31 @@ public sealed class SourceMapTests : IDisposable
     }
 
     [Fact]
+    public void Field_initializers_map_to_their_type_never_to_top_level_statements()
+    {
+        const string source = """
+            namespace Init;
+
+            public class Counter
+            {
+                private readonly int[] _items = [1, 2];
+                private static readonly string Name = "counter";
+
+                public int Count() => _items.Length + Name.Length;
+            }
+            """;
+        var fixture = FixtureAssembly.Build(Path.Combine(_root, "init"), source, "Init.cs", assemblyName: "Init");
+
+        foreach (var token in new[] { fixture.ConstructorToken("Init.Counter"), fixture.Token("Init.Counter", ".cctor") })
+        {
+            var location = _map.Resolve(fixture.DllPath, fixture.Mvid, token);
+            Assert.True(location.Found, location.Reason);
+            Assert.Equal(3, location.NavigationLine);
+            Assert.Equal("field initializers", location.Kind);
+        }
+    }
+
+    [Fact]
     public async Task The_source_endpoint_returns_the_verified_file()
     {
         await using var host = await CollectorHost.StartAsync($"--source-root={_root}");

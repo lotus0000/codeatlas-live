@@ -178,7 +178,9 @@ public sealed class PdbSourceMap(IReadOnlyList<string> roots) : IDisposable
                 AccessorDeclarationSyntax => "accessor",
                 PropertyDeclarationSyntax => "property",
                 TypeDeclarationSyntax { ParameterList: not null } => "primary constructor",
-                CompilationUnitSyntax => "top-level statements",
+                // An implicit constructor runs the field and property initializers: point at their type.
+                TypeDeclarationSyntax => "field initializers",
+                CompilationUnitSyntax unit when unit.Members.OfType<GlobalStatementSyntax>().Any() => "top-level statements",
                 _ => null,
             };
             if (kind is null || !positions.All(p => node.FullSpan.Contains(p))) continue;
