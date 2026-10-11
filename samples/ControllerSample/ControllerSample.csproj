@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <!-- The app's own OpenTelemetry (metrics). CodeAtlas must leave it alone, and Release must keep it. -->
+  <ItemGroup>
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.19.1" />
+  </ItemGroup>
+
+  <!-- CodeAtlas in Debug only (see MinimalApiSample.csproj). -->
+  <ItemGroup Condition="'$(Configuration)' == 'Debug'">
+    <ProjectReference Include="../../src/CodeAtlas.AspNetCore/CodeAtlas.AspNetCore.csproj" />
+  </ItemGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <DefineConstants>$(DefineConstants);CODEATLAS</DefineConstants>
+  </PropertyGroup>
+</Project>
