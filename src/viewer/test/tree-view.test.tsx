@@ -51,6 +51,16 @@ describe('execution tree', () => {
     expect(screen.getAllByText('heuristic').length).toBeGreaterThanOrEqual(3)
   })
 
+  it('gaps in the tree are short labels that carry the full wording', () => {
+    render(<ExecutionTree view={heuristic} selected={null} onSelect={() => {}} slowMs={200} />)
+
+    const all = (nodes: NodeView[]): NodeView[] => nodes.flatMap(n => [n, ...all(n.children)])
+    const gap = all(heuristic.roots).flatMap(n => n.gaps).find(g => g.kind === 'handler-not-recorded')!
+    const label = screen.getByText('handler not recorded')
+    expect(label.closest('[title]')).toHaveAttribute('title', gap.message)
+    expect(screen.getAllByText('time not covered').length).toBeGreaterThan(0)
+  })
+
   it('marks errors and slow spans', () => {
     render(<ExecutionTree view={failure} selected={null} onSelect={() => {}} slowMs={20} />)
 

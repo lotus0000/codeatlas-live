@@ -24,9 +24,9 @@ export function RoutingChip({ fn }: { fn: string }) {
     <Badge
       variant="outline"
       title="Routing metadata: the route points here; whether it ran is not recorded"
-      className="border-routing/40 bg-routing-soft font-mono text-routing"
+      className="min-w-0 shrink border-routing/40 bg-routing-soft font-mono text-routing"
     >
-      route → {shortFunction(fn)}
+      <span className="truncate">route → {shortFunction(fn)}</span>
     </Badge>
   )
 }
@@ -61,5 +61,23 @@ export function GapNote({ gap }: { gap: Gap }) {
         {gap.message}
       </span>
     </p>
+  )
+}
+
+const gapLabels: Record<string, string> = {
+  'uncovered-time': 'time not covered',
+  'no-server-span': 'no server span',
+  'missing-parent': 'parent not received',
+  'handler-not-recorded': 'handler not recorded',
+}
+
+/** Compact form for the tree: a short label; the collector's full wording is the tooltip and is read by screen readers. */
+export function GapChip({ gap }: { gap: Gap }) {
+  return (
+    <span title={gap.message} className="inline-flex items-center gap-1 rounded border border-gap/40 px-1.5 text-[11px] text-gap">
+      <TriangleAlert className="size-3 shrink-0" aria-hidden />
+      <span aria-hidden>{gapLabels[gap.kind] ?? gap.kind}</span>
+      <span className="sr-only">{gap.message}</span>
+    </span>
   )
 }

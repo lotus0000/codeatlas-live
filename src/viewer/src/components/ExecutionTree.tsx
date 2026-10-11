@@ -6,10 +6,10 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 import { formatMs } from '@/model/time'
 import { rows, totalMs, traceOrigin, type Row } from '@/model/tree'
-import { CorrelationBadge, GapNote, KindTag, RoutingChip } from './badges'
+import { CorrelationBadge, GapChip, KindTag, RoutingChip } from './badges'
 
 const MAX_INDENT_LEVELS = 24
-const columns = 'grid grid-cols-[minmax(0,1fr)_minmax(140px,36%)_72px] gap-x-3'
+const columns = 'grid grid-cols-[minmax(0,1fr)_minmax(120px,30%)_64px] gap-x-3'
 
 export function ExecutionTree({ view, selected, onSelect, slowMs }: {
   view: TraceView
@@ -130,7 +130,7 @@ function TreeRow({ row, total, selected, collapsed, onToggle, onSelect }: {
             <span className="w-3.5 shrink-0" />
           )}
           <KindTag kind={node.kind} />
-          <span className={cn('truncate', row.error && 'text-error')} title={node.span.name}>
+          <span className={cn('min-w-12 truncate', row.error && 'text-error')} title={node.span.name}>
             {node.span.name}
           </span>
           {node.code?.evidence === 'routing' && <RoutingChip fn={node.code.function} />}
@@ -141,11 +141,11 @@ function TreeRow({ row, total, selected, collapsed, onToggle, onSelect }: {
             </Badge>
           )}
         </div>
-        {node.gaps.map(gap => (
-          <div key={gap.kind} className="pl-5">
-            <GapNote gap={gap} />
+        {node.gaps.length > 0 && (
+          <div className="mt-0.5 flex flex-wrap gap-1 pl-5">
+            {node.gaps.map(gap => <GapChip key={gap.kind} gap={gap} />)}
           </div>
-        ))}
+        )}
       </div>
       <div className="relative mt-1.5 h-2.5" aria-hidden>
         <div
