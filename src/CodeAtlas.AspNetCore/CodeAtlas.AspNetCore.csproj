@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <PackageId>CodeAtlas.AspNetCore</PackageId>
+    <Version>0.1.0</Version>
+    <Description>Development-only CodeAtlas Live integration for ASP.NET Core. Reference it in Debug builds only.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="OpenTelemetry" Version="1.19.1" />
+    <ProjectReference Include="../CodeAtlas.Otlp/CodeAtlas.Otlp.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="CodeAtlas.AspNetCore.Tests" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,7 @@
+bin/
+obj/
+artifacts/
+TestResults/
+node_modules/
+*.user
+.superpowers/

@@ -147,38 +147,37 @@ codeatlas.code.evidence        executed | routing
 
 Names are never used to look up source; MVID + token are.
 
-### 5.4 Coexistence with the app's own OpenTelemetry (not verified by the PoC — plan task 1)
+### 5.4 Coexistence with the app's own OpenTelemetry (decided: option B, 2026-10-11)
 
-The PoC added CodeAtlas to the app's tracing pipeline and stripped SQL by mutating `Activity` tags. That would change
-what an app's own exporter sends. The MVP design avoids this:
+CodeAtlas is an observer. It must never change what the app's own tracing does just to see more.
 
-- CodeAtlas builds **its own `TracerProvider`** (`Sdk.CreateTracerProviderBuilder()`), owned by a hosted service.
-  It never calls `AddOpenTelemetry()` on the app's builder, never configures the app's instrumentation options,
-  processors, exporters or sampler.
-- CodeAtlas **never mutates an `Activity`.** Redaction, SQL summaries and renaming happen while serializing into OTLP
-  protobuf inside `CodeAtlasExporter : BaseExporter<Activity>` (official proto classes from `CodeAtlas.Otlp`).
-- CodeAtlas's sampler returns **record-only** (`AllData`, not `Recorded`). When the app has its own sampler, the
-  app's decision still controls the `sampled` flag and its exporters (which only export `Recorded` activities);
-  when it has none, CodeAtlas still sees every request.
+- CodeAtlas observes through a plain `ActivityListener` owned by a hosted service, not an OpenTelemetry provider:
+  only a plain listener can decline to take part in sampling (`ActivitySamplingResult.None`). It never calls
+  `AddOpenTelemetry()`, and never touches the app's instrumentation options, processors, exporters or sampler.
+- CodeAtlas **never mutates an `Activity` it did not create.** Redaction, SQL summaries and renaming happen while
+  serializing into OTLP protobuf (official proto classes from `CodeAtlas.Otlp`).
+- **Sampling.**
+  - The app has its own tracing (a `TracerProvider` in DI): CodeAtlas returns `None` for every activity, so whether
+    and how an activity is created is decided by the app alone. CodeAtlas exports what the app records. Requests the
+    app's sampler drops are not visible in CodeAtlas; it logs this once at start-up and marks its resource with
+    `codeatlas.sampling = app` so the viewer can show a banner.
+  - The app has no tracing: CodeAtlas records every request and inherits the parent's sampled flag, exactly as
+    ASP.NET Core's own activities do when nobody listens, so the flag sent downstream is unchanged
+    (`codeatlas.sampling = codeatlas`).
+- **Parent links.** CodeAtlas's own spans (endpoint, action, handler) would become the parent of database and HTTP
+  spans, which an app's own tool never receives. When the app has its own tracing these spans are off;
+  `WrapperSpansBesideAppTracing = true` opts in, and they are then created only inside requests the app records
+  (accepting broken parent links in the app's own tool, Development only).
+- **HTTP facts without mutation.** A first-in-pipeline middleware records method, route and status code in a side
+  table keyed by the request's `Activity` object (`ConditionalWeakTable`); the serializer merges them.
+- **No trace of CodeAtlas in the app's telemetry.** CodeAtlas's export calls run under OpenTelemetry instrumentation
+  suppression and use a private meter, so they appear in neither the app's traces nor its HTTP client metrics.
 
-- **Parent links (found while planning).** CodeAtlas's own spans (endpoint, action, handler) become the parent of
-  the database and HTTP spans created inside them. An app that has its own tracing would then export those child
-  spans with a parent its backend never receives (broken trees in the app's own tool). Therefore:
-  **when the app has its own tracing** (a `TracerProvider` is registered before `AddCodeAtlas`), CodeAtlas does not
-  create endpoint/action/handler spans; it shows the server, database and HTTP spans only, logs a warning once,
-  and the viewer shows a banner explaining why. `WrapperSpansBesideAppTracing = true` opts back in and accepts the
-  broken parent links in the app's own tool (Development only). Apps without their own tracing (e.g. example-app)
-  get the full tree.
-- **HTTP facts without mutation.** CodeAtlas does not add ASP.NET Core instrumentation to any provider (that would
-  attach exception events and enrichment to shared activities). A first-in-pipeline middleware records method, route
-  and status code in a side table keyed by the request's `Activity` object (`ConditionalWeakTable`), and the
-  serializer merges them.
-
-Plan task 4 proves this with a test app that has its own tracing (in-memory exporter, 0 % and 100 % samplers):
-the app's exported spans must be identical with and without CodeAtlas (count, names, attributes, sampled flags,
-including when the app customizes its own ASP.NET Core instrumentation options),
-and CodeAtlas must receive every request. **If any assertion fails, implementation stops and the maintainer decides** between
-"separate provider with always-on sampling (documented side effect)" and "CodeAtlas refuses to run beside existing tracing".
+The coexistence gate (`CoexistenceTests`) runs a test app with its own tracing (enrichment callback, custom processor,
+in-memory exporter) under always-on, always-off and parent-based sampling, with and without CodeAtlas, and requires
+identical: exported spans (names, kinds, status, flags, all-data state, trace ids, parent links, events, tags),
+the activity state seen inside the handler, the traceparent sent downstream, and the number of enrichment and processor
+calls. Mutation checks prove the gate fails when CodeAtlas takes part in sampling or tags a shared activity.
 
 ### 5.5 Privacy (backend)
 
@@ -186,7 +185,7 @@ Applied in `CodeAtlasExporter` serialization, on by default:
 
 | Data | Treatment |
 |---|---|
-| `db.statement`, `db.query.text` | replaced by `db.query.summary` = operation + table names (e.g. `INSERT audit_logs products`); span renamed to it |
+| `db.statement`, `db.query.text` | replaced by `db.query.summary` = operation + table names (e.g. `INSERT audit_logs products`); span renamed to it. Fails closed: text with dollar-quoted or `E''` strings, or unterminated literals/comments, yields the operation only; an unknown operation yields `SQL` |
 | `db.npgsql.data_source`, `db.connection_string` | dropped |
 | `url.query`, `url.full` query part | dropped |
 | request / response bodies, headers | never captured |
@@ -372,5 +371,4 @@ All suites run from one command (`scripts/test-all.sh`).
 
 1. Approve this specification.
 2. code-server visual open from the PoC: pending your manual check.
-3. §5.4 default when the app has its own tracing: no wrapper spans (recommended), with an opt-in. Confirm or change.
-4. §5.4 outcome, only if plan task 4 fails.
+3. §5.4 decided by the maintainer on 2026-10-11: option B (follow the app's sampling; no wrapper spans by default, opt-in kept).

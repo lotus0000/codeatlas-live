@@ -1,0 +1,36 @@
+# Known limitations
+
+Backend integration (`CodeAtlas.AspNetCore`), as of Plan 1. Plan 5 extends this file with collector, browser and
+viewer limitations.
+
+## By design
+
+| Limitation | Why |
+|---|---|
+| Only endpoint, action and handler methods, plus ASP.NET Core, HttpClient and Npgsql operations, appear as spans. Services and repositories called inside a handler do not. | Automatic method tracing is out of the MVP (spec §3). |
+| Minimal APIs need `.WithCodeAtlasHandlerSpan()` per endpoint or group for a handler-only span. | ASP.NET Core has no global hook between binding and the handler. |
+| If the app has its own OpenTelemetry tracing, CodeAtlas shows only the requests the app's sampler records, and has no endpoint/action/handler spans unless opted in. | CodeAtlas must not change the app's tracing (spec §5.4, option B). |
+| Tracing tools that are not an OpenTelemetry `TracerProvider` in DI (e.g. Application Insights classic, a raw `ActivityListener`) are not detected. Wrapper spans stay on, and those tools may see database/HTTP spans whose parent they never receive. | Detection is defined as "a `TracerProvider` is registered". |
+| Exception messages and stack traces are exported. | Needed for debugging; Development only. |
+| Tags that the app's own instrumentation adds (other than headers, client address and `enduser.*`) are exported. | CodeAtlas cannot know which custom tags are sensitive. |
+| Database tracing is Npgsql only. | MVP scope. |
+| In Development, an exception handled by the developer exception page gives a server span with status 500 but no "unhandled" flag; the exception is on the endpoint/action/handler span. | The page handles it inside the pipeline. |
+
+## Deferred minor issues
+
+Each was found in the Plan 1 final review. "Safe to defer" means no business behavior, privacy or Release build is
+affected.
+
+| Issue | Impact | Safe to defer? | When |
+|---|---|---|---|
+| Several web hosts in one process (e.g. an app's `WebApplicationFactory` tests in a Debug build) each export every span; copies made by a host that did not serve the request lack route and status. | Duplicate or less detailed spans in the viewer while such tests run with a collector open. The app and its tests are unaffected. | Yes, if the collector keeps the most detailed copy of a span. | Plan 2 (collector merge rule) |
+| `CodeAtlas.AspNetCore` requires `OpenTelemetry >= 1.19.1`. An app on an older OpenTelemetry gets it upgraded in Debug builds only; an app that pins a lower version directly gets build error NU1605 in Debug. | Debug and Release may run different OpenTelemetry versions; some apps cannot build Debug with CodeAtlas. Release unaffected. | Yes for apps without OpenTelemetry or on ≥ 1.19.1 (e.g. example-app). **Not** for apps pinned below 1.19.1. | Before integrating such an app: lower the floor (CodeAtlas now only needs `BaseProcessor` and instrumentation suppression) and prove it with an older-version release fixture |
+| An exception thrown after the response has started is recorded as status 500 on the server span, though the client already received another status. | Misleading status on rare streaming responses. | Yes | Later |
+| The export processor's two cancellation token sources are not disposed. | None in practice (no timers attached). | Yes | Later |
+| An app with logging fully disabled and no tracing: CodeAtlas's listener makes HttpClient send a `traceparent` header where none was sent before. | Downstream services see a trace header they did not see before; the sampled flag is unchanged. Apps with any logging provider are unaffected. | Yes (Development only, rare setup) | Later |
+
+Fixed in Plan 1's final pass (no longer limitations): SQL with dollar-quoted or `E''` strings now yields the operation
+only; `CodeAtlas:Enabled=false` works in Development; invalid settings no longer stop the app; repeated
+`AddCodeAtlas()` calls are ignored; header values, client address and `enduser.*` tags are dropped; lazy tag values
+are never enumerated; CodeAtlas's export traffic stays out of the app's traces and metrics; the downstream sampled flag
+is unchanged; the host stop flushes queued spans.
