@@ -50,7 +50,9 @@ public sealed record CollectorOptions(
             publicUrl,
             configuration["CodeAtlas:Editor:Kind"] ?? "code-server",
             configuration["CodeAtlas:Editor:Command"],
-            new StoreLimits());
+            new StoreLimits(
+                configuration.GetValue("CodeAtlas:MaxTraces", 500),
+                configuration.GetValue("CodeAtlas:MaxSpansPerTrace", 2000)));
     }
 
     private static List<string> List(string? value) =>

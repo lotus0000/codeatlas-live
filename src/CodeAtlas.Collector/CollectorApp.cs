@@ -36,6 +36,8 @@ public static class CollectorApp
         builder.Configuration["AllowedHosts"] = string.Join(';', options.AllowedHosts);
         builder.Services.AddSingleton(options);
         builder.Services.AddSingleton(new Store.TraceStore(options.Limits));
+        builder.Services.AddSignalR();
+        builder.Services.AddSingleton<Live.LiveNotifier>();
         builder.Services.AddCors(cors => cors.AddPolicy(IngestCors, policy => policy
             .WithOrigins([.. options.AllowedOrigins]).WithMethods("POST").WithHeaders("content-type", "content-encoding")));
         builder.Services.ConfigureHttpJsonOptions(json => json.SerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase);
@@ -49,6 +51,7 @@ public static class CollectorApp
         app.UseStaticFiles();
         TraceEndpoints.Map(app);
         Ingest.IngestEndpoints.Map(app);
+        app.MapHub<Live.LiveHub>("/live");
         return app;
     }
 }

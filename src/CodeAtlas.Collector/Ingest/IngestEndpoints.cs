@@ -13,13 +13,13 @@ internal static class IngestEndpoints
 
     public static void Map(IEndpointRouteBuilder app)
     {
-        app.MapPost("/v1/traces", async (HttpRequest request, TraceStore store) =>
+        app.MapPost("/v1/traces", async (HttpRequest request, TraceStore store, Live.LiveNotifier live) =>
         {
             ExportTraceServiceRequest export;
             try { export = await OtlpReader.ReadAsync(request); }
             catch (BadHttpRequestException e) { return Results.Text(e.Message, statusCode: e.StatusCode); }
 
-            store.Add(export);
+            await live.NotifyAsync(store.Add(export));
             return request.ContentType!.StartsWith("application/json", StringComparison.OrdinalIgnoreCase)
                 ? Results.Text("{}", "application/json")
                 : Results.Bytes(EmptyResponse, "application/x-protobuf");
