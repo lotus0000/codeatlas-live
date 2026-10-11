@@ -5,6 +5,7 @@ cd "$(dirname "$0")/.."
 rm -rf artifacts/nuget
 dotnet pack src/CodeAtlas.Otlp -c Release -o artifacts/nuget --nologo -v q
 dotnet pack src/CodeAtlas.AspNetCore -c Release -o artifacts/nuget --nologo -v q
+scripts/build-viewer.sh > /dev/null
 dotnet pack src/CodeAtlas.Collector -c Release -o artifacts/nuget --nologo -v q
 mkdir -p artifacts/npm
 (cd src/web && npm ci --silent && npm run build --silent && npm pack --silent --pack-destination ../../artifacts/npm)
