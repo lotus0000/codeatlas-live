@@ -34,3 +34,10 @@ vi.mock('@/components/MonacoView', async () => {
       }, props.text),
   }
 })
+
+// jsdom has no layout: every element is a 0×0 box at 0,0, so react-resizable-panels would treat every pointer event as
+// hitting a pane separator (and take focus). Put separators out of the way; real resizing is covered by the E2E suite.
+const realRect = Element.prototype.getBoundingClientRect
+Element.prototype.getBoundingClientRect = function (this: Element) {
+  return this.hasAttribute('data-separator') ? DOMRect.fromRect({ x: -10_000, y: -10_000, width: 1, height: 1 }) : realRect.call(this)
+}

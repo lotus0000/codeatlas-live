@@ -1,5 +1,6 @@
 import { ArrowRight } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useDefaultLayout, type LayoutStorage } from 'react-resizable-panels'
 import { getInfo, getTrace, getTraces } from '@/api/client'
 import { signalRLive, type LiveSource, type LiveState } from '@/api/live'
 import type { CollectorInfo, TraceSummary, TraceView } from '@/api/types'
@@ -9,6 +10,7 @@ import { ExecutionTree } from '@/components/ExecutionTree'
 import { ExplainView } from '@/components/ExplainView'
 import { Inspector } from '@/components/Inspector'
 import { TopBar } from '@/components/TopBar'
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { followTarget, hasServer, mergeSummaries } from '@/model/activity'
 import { formatMs, shortId } from '@/model/time'
@@ -22,8 +24,27 @@ function slowFromUrl(): number {
   return Number.isFinite(value) && value > 0 ? value : DEFAULT_SLOW_MS
 }
 
+// Pane widths are a per-viewer convenience: kept in localStorage when it is available, never required.
+const paneStorage: LayoutStorage = {
+  getItem: key => {
+    try {
+      return localStorage.getItem(key)
+    } catch {
+      return null
+    }
+  },
+  setItem: (key, value) => {
+    try {
+      localStorage.setItem(key, value)
+    } catch {
+      // Storage blocked: the widths last until reload.
+    }
+  },
+}
+
 export function App({ live = signalRLive }: { live?: LiveSource }) {
   const theme = useTheme()
+  const panes = useDefaultLayout({ id: 'codeatlas.panes', storage: paneStorage, onlySaveAfterUserInteractions: true })
   const [slowMs] = useState(slowFromUrl)
   const [info, setInfo] = useState<CollectorInfo | null>(null)
   const [summaries, setSummaries] = useState<TraceSummary[]>([])
@@ -118,9 +139,13 @@ export function App({ live = signalRLive }: { live?: LiveSource }) {
           {error}
         </p>
       )}
-      <div className="grid min-h-0 flex-1 grid-cols-[260px_minmax(0,1fr)_360px] 2xl:grid-cols-[300px_minmax(0,1fr)_420px]">
+      <ResizablePanelGroup orientation="horizontal" defaultLayout={panes.defaultLayout} onLayoutChanged={panes.onLayoutChanged} className="min-h-0 flex-1">
+        <ResizablePanel id="activity" defaultSize="21" minSize={200} maxSize="40" className="flex min-h-0 flex-col">
         <ActivityList summaries={summaries} selected={traceId} filter={filter} onFilter={setFilter} onSelect={choose} />
-        <main aria-label="Trace" className="flex min-h-0 flex-col border-x">
+        </ResizablePanel>
+        <ResizableHandle withHandle aria-label="Resize activity list" />
+        <ResizablePanel id="trace" minSize={360} className="flex min-h-0 flex-col">
+        <main aria-label="Trace" className="flex min-h-0 flex-1 flex-col">
           {shown ? (
             <>
               <TraceHeader summary={shown.summary} truncated={shown.truncated} />
@@ -147,8 +172,12 @@ export function App({ live = signalRLive }: { live?: LiveSource }) {
             </p>
           )}
         </main>
-        <Inspector view={shown} spanId={spanId} info={info} dark={theme.dark} onSelect={setSpanId} />
-      </div>
+        </ResizablePanel>
+        <ResizableHandle withHandle aria-label="Resize inspector" />
+        <ResizablePanel id="inspector" defaultSize="30" minSize={300} maxSize="65" className="flex min-h-0 flex-col">
+          <Inspector view={shown} spanId={spanId} info={info} dark={theme.dark} onSelect={setSpanId} />
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   )
 }

@@ -1,7 +1,6 @@
 import { Fragment, type ReactNode } from 'react'
 import type { CollectorInfo, NodeView, SpanEvent, TraceView } from '@/api/types'
 import { Badge } from '@/components/ui/badge'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 import { clock, formatMs } from '@/model/time'
 import { ancestors, findNode, isError } from '@/model/tree'
@@ -29,8 +28,9 @@ export function Inspector({ view, spanId, info, dark, onSelect }: {
   const owner = ancestors(view.roots, span.spanId).reverse().find(a => a.code?.evidence === 'executed')
 
   return (
-    <aside aria-label="Inspector" className="flex min-h-0 flex-col">
-      <ScrollArea className="min-h-0 flex-1">
+    <aside aria-label="Inspector" className="flex min-h-0 min-w-0 flex-1 flex-col">
+      {/* A plain vertical scroller: content must never grow wider than the pane (Monaco measures its container). */}
+      <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
         <div className="space-y-5 p-4">
           <div className="space-y-1.5">
             <div className="flex flex-wrap items-center gap-1.5">
@@ -80,7 +80,7 @@ export function Inspector({ view, spanId, info, dark, onSelect }: {
 
           <Attributes attributes={span.attributes} />
         </div>
-      </ScrollArea>
+      </div>
     </aside>
   )
 }
