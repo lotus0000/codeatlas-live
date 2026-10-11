@@ -36,6 +36,7 @@ public static class CollectorApp
         builder.Configuration["AllowedHosts"] = string.Join(';', options.AllowedHosts);
         builder.Services.AddSingleton(options);
         builder.Services.AddSingleton(new Store.TraceStore(options.Limits));
+        builder.Services.AddSingleton(new Source.PdbSourceMap(options.SourceRoots));
         builder.Services.AddSignalR();
         builder.Services.AddSingleton<Live.LiveNotifier>();
         builder.Services.AddCors(cors => cors.AddPolicy(IngestCors, policy => policy
@@ -51,6 +52,7 @@ public static class CollectorApp
         app.UseStaticFiles();
         TraceEndpoints.Map(app);
         Ingest.IngestEndpoints.Map(app);
+        Source.SourceEndpoints.Map(app);
         app.MapHub<Live.LiveHub>("/live");
         return app;
     }
