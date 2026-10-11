@@ -4,22 +4,11 @@
   "description": "CodeAtlas Live browser integration (development only).",
   "type": "module",
   "sideEffects": false,
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    },
-    "./runtime": {
-      "types": "./dist/runtime.d.ts",
-      "import": "./dist/runtime.js"
-    },
-    "./axios": {
-      "types": "./dist/axios.d.ts",
-      "import": "./dist/axios.js"
-    }
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    "./runtime": { "types": "./dist/runtime.d.ts", "import": "./dist/runtime.js" },
+    "./axios": { "types": "./dist/axios.d.ts", "import": "./dist/axios.js" }
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -34,14 +23,8 @@
     "@opentelemetry/sdk-trace-base": "2.12.0",
     "@opentelemetry/sdk-trace-web": "2.12.0"
   },
-  "peerDependencies": {
-    "axios": ">=1"
-  },
-  "peerDependenciesMeta": {
-    "axios": {
-      "optional": true
-    }
-  },
+  "peerDependencies": { "axios": ">=1" },
+  "peerDependenciesMeta": { "axios": { "optional": true } },
   "devDependencies": {
     "@opentelemetry/otlp-transformer": "0.223.0",
     "@types/node": "24.19.2",

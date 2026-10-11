@@ -5,3 +5,4 @@ TestResults/
 node_modules/
 *.user
 .superpowers/
+src/web/dist/

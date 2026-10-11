@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#Packs the integration packages into ./artifacts/nuget (a local folder feed) and ./artifacts/npm. Nothing is published.
+# Packs the integration packages into ./artifacts/nuget (a local folder feed) and ./artifacts/npm. Nothing is published.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 rm -rf artifacts/nuget
