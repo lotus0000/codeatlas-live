@@ -6,8 +6,8 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 import { resourceFromAttributes } from '@opentelemetry/resources'
 import { BatchSpanProcessor, SimpleSpanProcessor, type SpanExporter } from '@opentelemetry/sdk-trace-base'
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web'
-import { labelOf } from './labels'
-import { setRuntime, type AxiosLikeConfig, type InteractionHandle, type Runtime } from './registry'
+import { labelOf } from './labels.js'
+import { setRuntime, type AxiosLikeConfig, type InteractionHandle, type Runtime } from './registry.js'
 
 const axiosSpan = Symbol('codeatlas.axiosSpan')
 
@@ -53,6 +53,7 @@ export function initCodeAtlas(options: CodeAtlasOptions): CodeAtlasHandle {
   const propagator = new W3CTraceContextPropagator()
   // Whatever fetch the page has now (possibly the app's own wrapper) is what CodeAtlas calls.
   const original: Fetch = window.fetch
+  const exporter = exporterFetch(original)
 
   const resolve = (input: RequestInfo | URL) => new URL(input instanceof Request ? input.url : String(input), location.href)
   const traceable = (url: URL) =>
@@ -91,8 +92,10 @@ export function initCodeAtlas(options: CodeAtlasOptions): CodeAtlasHandle {
     return p.span
   }
 
+  const recentPending = () => (pending && performance.now() - pending.at <= windowMs ? pending : null)
+
   function heuristicFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-    const recent = pending && performance.now() - pending.at <= windowMs ? pending : null
+    const recent = recentPending()
     const request = input instanceof Request ? input : undefined
     const carriesTrace = new Headers(init?.headers ?? request?.headers).has('traceparent')
     // Checked here too, so an untraceable request (collector, cross-origin) never creates the interaction span.
@@ -102,6 +105,12 @@ export function initCodeAtlas(options: CodeAtlasOptions): CodeAtlasHandle {
 
   const onClick = (event: Event) => onInteraction(event, 'click')
   const onSubmit = (event: Event) => onInteraction(event, 'submit')
+
+  function traceHeaders(span: Span): Record<string, string> {
+    const carrier: Record<string, string> = {}
+    propagator.inject(trace.setSpan(ROOT_CONTEXT, span), carrier, { set: (c, key, value) => { c[key] = value } })
+    return carrier
+  }
 
   function startClient(parent: Span, correlation: string, method: string, url: URL): Span {
     return tracer.startSpan(`${method} ${url.pathname}`, {
@@ -124,8 +133,7 @@ export function initCodeAtlas(options: CodeAtlasOptions): CodeAtlasHandle {
     const request = input instanceof Request ? input : undefined
     const method = (init?.method ?? request?.method ?? 'GET').toUpperCase()
     const span = startClient(parent, correlation, method, url)
-    const headers = new Headers(init?.headers ?? request?.headers)
-    propagator.inject(trace.setSpan(ROOT_CONTEXT, span), headers, { set: (carrier, key, value) => carrier.set(key, value) })
+    const headers = withTraceHeaders(init?.headers, request, traceHeaders(span))
     try {
       const response = await original(input, { ...init, headers })
       endClient(span, response.status)
@@ -152,13 +160,13 @@ export function initCodeAtlas(options: CodeAtlasOptions): CodeAtlasHandle {
     fetch: (handle, input, init) => tracedFetch((handle as Handle).span, 'explicit', input, init),
     beforeAxiosRequest(config) {
       const handle = config.codeatlas as Handle | undefined
-      if (!handle) return config
-      const base = config.baseURL ? new URL(config.baseURL, location.href) : new URL(location.href)
-      const url = new URL(config.url ?? '', base)
-      if (!traceable(url)) return config
-      const span = startClient(handle.span, 'explicit', (config.method ?? 'get').toUpperCase(), url)
-      const carrier: Record<string, string> = {}
-      propagator.inject(trace.setSpan(ROOT_CONTEXT, span), carrier, { set: (c, key, value) => { c[key] = value } })
+      const recent = handle ? null : recentPending()
+      if (!handle && !recent) return config
+      const url = axiosUrl(config)
+      if (!traceable(url) || (!handle && axiosCarriesTrace(config.headers))) return config
+      const parent = handle ? handle.span : heuristicSpan(recent!)
+      const span = startClient(parent, handle ? 'explicit' : 'heuristic', (config.method ?? 'get').toUpperCase(), url)
+      const carrier = traceHeaders(span)
       const headers = config.headers as { set?: (key: string, value: string) => void } | Record<string, string> | undefined
       if (headers && typeof (headers as { set?: unknown }).set === 'function')
         for (const [key, value] of Object.entries(carrier)) (headers as { set: (k: string, v: string) => void }).set(key, value)
@@ -173,7 +181,7 @@ export function initCodeAtlas(options: CodeAtlasOptions): CodeAtlasHandle {
   }
 
   // The patch keeps OpenTelemetry's `__original` convention so the OTLP exporter bypasses it.
-  const patched = Object.assign(((input: RequestInfo | URL, init?: RequestInit) => heuristicFetch(input, init)) as Fetch, { __original: original })
+  const patched = Object.assign(((input: RequestInfo | URL, init?: RequestInit) => heuristicFetch(input, init)) as Fetch, { __original: exporter.fetch })
   document.addEventListener('click', onClick, { capture: true, passive: true })
   document.addEventListener('submit', onSubmit, { capture: true, passive: true })
   window.fetch = patched
@@ -185,6 +193,7 @@ export function initCodeAtlas(options: CodeAtlasOptions): CodeAtlasHandle {
       document.removeEventListener('click', onClick, { capture: true })
       document.removeEventListener('submit', onSubmit, { capture: true })
       if (window.fetch === patched) window.fetch = original
+      exporter.frame?.remove()
       setRuntime(undefined)
       active = undefined
       await provider.shutdown()
@@ -192,6 +201,52 @@ export function initCodeAtlas(options: CodeAtlasOptions): CodeAtlasHandle {
   }
   active = handle
   return handle
+}
+
+/**
+ * The OTLP exporter sends through `fetch.__original`. When the app has wrapped fetch (auth headers, error toasts),
+ * exports must not go through that wrapper, so they use a native fetch from a hidden frame.
+ */
+function exporterFetch(current: Fetch): { fetch: Fetch; frame?: HTMLIFrameElement } {
+  if (/\[native code\]/.test(Function.prototype.toString.call(current))) return { fetch: current }
+  const frame = document.createElement('iframe')
+  frame.style.display = 'none'
+  frame.setAttribute('aria-hidden', 'true')
+  frame.tabIndex = -1
+  document.documentElement.appendChild(frame)
+  const native = (frame.contentWindow as (Window & { fetch?: Fetch }) | null)?.fetch
+  if (typeof native === 'function') return { fetch: (input, init) => native(input, init), frame }
+  frame.remove()
+  return { fetch: current }
+}
+
+/** Adds trace headers in the form the caller used, so an app's own fetch wrapper (often `{ ...init.headers }`) still sees every header. */
+function withTraceHeaders(headers: HeadersInit | undefined, request: Request | undefined, carrier: Record<string, string>): HeadersInit {
+  if (headers === undefined && !request) return carrier
+  if (headers === undefined || headers instanceof Headers) {
+    const copy = new Headers(headers ?? request!.headers)
+    for (const [key, value] of Object.entries(carrier)) copy.set(key, value)
+    return copy
+  }
+  if (Array.isArray(headers)) return [...headers, ...Object.entries(carrier)]
+  return { ...headers, ...carrier }
+}
+
+/** The URL Axios will request: it joins baseURL and url as strings (combineURLs), not as WHATWG URL resolution. */
+function axiosUrl(config: AxiosLikeConfig): URL {
+  const url = config.url ?? ''
+  const absolute = /^([a-z][a-z\d+\-.]*:)?\/\//i.test(url)
+  const full = config.baseURL && (!absolute || config.allowAbsoluteUrls === false)
+    ? (url ? `${config.baseURL.replace(/\/?\/$/, '')}/${url.replace(/^\/+/, '')}` : config.baseURL)
+    : url
+  return new URL(full, location.href)
+}
+
+function axiosCarriesTrace(headers: unknown): boolean {
+  if (!headers || typeof headers !== 'object') return false
+  const has = (headers as { has?: unknown }).has
+  if (typeof has === 'function') return Boolean(has.call(headers, 'traceparent'))
+  return Object.keys(headers).some(key => key.toLowerCase() === 'traceparent')
 }
 
 export type { AxiosLikeConfig }

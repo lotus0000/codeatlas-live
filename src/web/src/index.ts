@@ -1,8 +1,8 @@
 // The part of CodeAtlas that app code imports. Without the development runtime it is plain fetch / plain Axios,
 // so it is safe (and tiny) in production bundles.
-import { currentRuntime, type AxiosLikeConfig, type InteractionHandle } from './registry'
+import { currentRuntime, type AxiosLikeConfig, type InteractionHandle } from './registry.js'
 
-export type { InteractionHandle } from './registry'
+export type { InteractionHandle } from './registry.js'
 
 export interface Interaction {
   readonly name: string

@@ -71,6 +71,46 @@ describe('Axios', () => {
     expect(client.status.code).toBe(SpanStatusCode.UNSET)
   })
 
+  it('a baseURL with a path is joined the way Axios joins it', async () => {
+    current = start({ propagateTo: ['http://localhost:5000/api'] })
+    const { api, seen } = fakeAxios('http://localhost:5000/api')
+
+    await trackInteraction('Joined', async ix => {
+      await api.post('/orders', {}, ix.axiosConfig())
+      await api.post('lines', {}, ix.axiosConfig())
+    })
+
+    expect(seen.map(c => c.headers.get('traceparent') ? 'traced' : 'plain')).toEqual(['traced', 'traced'])
+    expect(named(current.spans(), 'POST /api/orders')).toHaveLength(1)
+    expect(named(current.spans(), 'POST /api/lines')).toHaveLength(1)
+  })
+
+  it('a same-origin relative baseURL keeps its path in the span name', async () => {
+    current = start()
+    const { api } = fakeAxios('/api')
+
+    await trackInteraction('Same origin', ix => api.get('/orders', ix.axiosConfig()))
+
+    expect(named(current.spans(), 'GET /api/orders')).toHaveLength(1)
+  })
+
+  it('plain Axios requests right after a click are linked heuristically', async () => {
+    current = start()
+    const { api, seen } = fakeAxios()
+    document.body.innerHTML = '<button>Refresh</button>'
+    document.querySelector('button')!.click()
+
+    await api.get('/api/orders')
+
+    const [interaction] = named(current.spans(), 'interaction: Refresh')
+    const [client] = named(current.spans(), 'GET /api/orders')
+    expect(interaction.attributes['codeatlas.correlation']).toBe('heuristic')
+    expect(parentId(client)).toBe(interaction.spanContext().spanId)
+    expect(client.attributes['codeatlas.correlation']).toBe('heuristic')
+    expect(seen[0].headers.get('traceparent')).toContain(interaction.spanContext().traceId)
+    document.body.innerHTML = ''
+  })
+
   it('Relative_axios_urls_resolve_against_baseURL', async () => {
     current = start()
     const { api, seen } = fakeAxios('https://thirdparty.example/v1/')

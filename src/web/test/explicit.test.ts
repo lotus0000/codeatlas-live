@@ -1,5 +1,5 @@
 import { SpanKind, SpanStatusCode } from '@opentelemetry/api'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { trackInteraction } from '../src/index'
 import { initCodeAtlas } from '../src/runtime'
 import { currentRuntime } from '../src/registry'
@@ -101,6 +101,65 @@ describe('explicit interactions', () => {
 
     expect(appWrapperCalls).toEqual(['/api/save'])
     await handle.shutdown()
+  })
+
+  it('An_app_fetch_wrapper_that_spreads_record_headers_still_sees_them', async () => {
+    current = start()
+    await current.stop()
+    current = undefined
+    const network = window.fetch
+    const seen: Headers[] = []
+    window.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
+      const merged = { ...(init?.headers as Record<string, string> | undefined), 'x-auth': 't' }
+      seen.push(new Headers(merged))
+      return network(input, { ...init, headers: merged })
+    }) as typeof fetch
+    const { InMemorySpanExporter } = await import('@opentelemetry/sdk-trace-base')
+    const handle = initCodeAtlas({ collectorUrl: 'http://localhost:4318/v1/traces', serviceName: 't', exporter: new InMemorySpanExporter() })
+
+    await trackInteraction('Save', ix => ix.fetch('/api/x', { method: 'POST', headers: { 'content-type': 'application/json' } }))
+    await handle.shutdown()
+
+    expect(seen[0].get('content-type')).toBe('application/json')
+    expect(seen[0].get('x-auth')).toBe('t')
+    expect(seen[0].get('traceparent')).not.toBeNull()
+  })
+
+  it('keeps the header form the caller used', async () => {
+    current = start()
+    const forms: unknown[] = []
+    current.fake.mockImplementation(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      forms.push(Array.isArray(init?.headers) ? 'array' : init?.headers instanceof Headers ? 'Headers' : typeof init?.headers)
+      return new Response('{}')
+    })
+
+    await trackInteraction('Forms', async ix => {
+      await ix.fetch('/api/a', { headers: { 'content-type': 'text/plain' } })
+      await ix.fetch('/api/b', { headers: [['content-type', 'text/plain']] })
+      await ix.fetch('/api/c', { headers: new Headers({ 'content-type': 'text/plain' }) })
+    })
+
+    expect(forms).toEqual(['object', 'array', 'Headers'])
+  })
+
+  it('The_exporter_bypasses_an_app_fetch_wrapper', async () => {
+    const native = vi.fn(async () => new Response('{}'))
+    const frame = vi.spyOn(HTMLIFrameElement.prototype, 'contentWindow', 'get').mockReturnValue({ fetch: native } as unknown as Window)
+    const wrapper = (async () => new Response('{}')) as typeof fetch
+    window.fetch = wrapper
+    try {
+      const { InMemorySpanExporter } = await import('@opentelemetry/sdk-trace-base')
+      const handle = initCodeAtlas({ collectorUrl: 'http://localhost:4318/v1/traces', serviceName: 't', exporter: new InMemorySpanExporter() })
+      const exporterFetch = (window.fetch as typeof fetch & { __original?: typeof fetch }).__original!
+      await exporterFetch('http://localhost:4318/v1/traces', { method: 'POST' })
+      await handle.shutdown()
+
+      expect(native).toHaveBeenCalledTimes(1)
+      expect(window.fetch).toBe(wrapper)
+      expect(document.querySelector('iframe')).toBeNull()
+    } finally {
+      frame.mockRestore()
+    }
   })
 
   it('resolves a relative collector URL against the page', async () => {

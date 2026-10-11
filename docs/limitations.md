@@ -49,3 +49,15 @@ is unchanged; the host stop flushes queued spans.
 | The store caps span count and string length, not span names, event counts or array lengths; limits ≤ 0 are not validated. | Memory use from unusual but local input. | Yes |
 | The session token comparison is not constant-time. | Negligible on loopback. | Yes |
 | On Windows, `code.cmd` / `rider.cmd` run through cmd.exe, which interprets `&` and `%` in arguments. | A source path containing those characters could be misparsed by cmd.exe. | Yes; prefer `.exe` editors on Windows (documented in Plan 5) |
+
+## Browser package: deferred minor issues (Plan 3 final review)
+
+| Issue | Impact | Safe to defer? |
+|---|---|---|
+| The patched `fetch` can throw synchronously (invalid header names, malformed URL right after a click) where native `fetch` returns a rejected promise. | A `fetch(...).catch(...)` chain sees an uncaught exception instead, only while CodeAtlas runs. | Yes (development only, unusual input) |
+| On a form submit with a submitter, the form's own `data-codeatlas` / name / id is ignored. | An icon-only submit button gives the label `button` instead of the form's annotation. | Yes (label only) |
+| Clicks on elements that are not buttons/links (e.g. a `<tr onClick>`) neither start nor clear a heuristic interaction. | A request from such a click within `windowMs` of a button click is attributed to that button. | Yes (heuristic, marked as such) |
+| Relative URLs resolve against `location.href`, not `document.baseURI`. | With `<base href>`, the recorded path or allow-list decision can differ from the real request. | Yes (rare in SPAs) |
+| An old handle's `shutdown()` after a re-init also unregisters the newer runtime; a second `shutdown()` shuts the provider down twice. | Tracing stops after unusual HMR/StrictMode sequences until reload. | Yes |
+| `pack-local.sh` does not clean `src/web/dist` before building. | Files from renamed or removed sources could ship in the local tarball. | Yes (local feed only) |
+| When the app has wrapped `fetch`, the runtime adds a hidden same-origin `<iframe>` to get a native fetch for OTLP exports. | One extra hidden element under `<html>` in development. | By design |
