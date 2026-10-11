@@ -31,9 +31,11 @@ export async function trackInteraction<T>(name: string, fn: (ix: Interaction) =>
   }
 }
 
+// `any` because Axios's interceptor generics differ between versions; a real AxiosInstance must fit.
+type Callback = (value: any) => any
 type Interceptors = {
-  request: { use(onFulfilled: (config: never) => unknown): unknown }
-  response: { use(onFulfilled: (response: never) => unknown, onRejected?: (error: never) => unknown): unknown }
+  request: { use(onFulfilled: Callback): unknown }
+  response: { use(onFulfilled: Callback, onRejected?: Callback): unknown }
 }
 
 /** The part of an Axios instance CodeAtlas needs; a real `AxiosInstance` fits. */
@@ -43,15 +45,15 @@ export interface AxiosLikeInstance {
 
 /** Adds trace context to requests made with `ix.axiosConfig()`. Other requests, and everything without the runtime, are untouched. */
 export function instrumentAxios(instance: AxiosLikeInstance): void {
-  instance.interceptors.request.use(((config: AxiosLikeConfig) => currentRuntime()?.beforeAxiosRequest(config) ?? config) as (config: never) => unknown)
+  instance.interceptors.request.use((config: AxiosLikeConfig) => currentRuntime()?.beforeAxiosRequest(config) ?? config)
   instance.interceptors.response.use(
-    ((response: { status: number; config?: AxiosLikeConfig }) => {
+    (response: { status: number; config?: AxiosLikeConfig }) => {
       currentRuntime()?.afterAxiosResponse(response.config, response.status)
       return response
-    }) as (response: never) => unknown,
-    ((error: { config?: AxiosLikeConfig; response?: { status: number } }) => {
+    },
+    (error: { config?: AxiosLikeConfig; response?: { status: number } }) => {
       currentRuntime()?.afterAxiosResponse(error?.config, error?.response?.status ?? 0, error)
       return Promise.reject(error)
-    }) as (error: never) => unknown,
+    },
   )
 }

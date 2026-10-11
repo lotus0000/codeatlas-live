@@ -8,6 +8,8 @@ import { BatchSpanProcessor, SimpleSpanProcessor, type SpanExporter } from '@ope
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web'
 import { setRuntime, type AxiosLikeConfig, type InteractionHandle, type Runtime } from './registry'
 
+const axiosSpan = Symbol('codeatlas.axiosSpan')
+
 export interface CodeAtlasOptions {
   /** OTLP/HTTP traces URL of the collector; may be relative to the page (e.g. a dev-server proxy path). */
   collectorUrl: string
@@ -102,8 +104,26 @@ export function initCodeAtlas(options: CodeAtlasOptions): CodeAtlasHandle {
       span.end()
     },
     fetch: (handle, input, init) => tracedFetch((handle as Handle).span, 'explicit', input, init),
-    beforeAxiosRequest: config => config,
-    afterAxiosResponse: () => {},
+    beforeAxiosRequest(config) {
+      const handle = config.codeatlas as Handle | undefined
+      if (!handle) return config
+      const base = config.baseURL ? new URL(config.baseURL, location.href) : new URL(location.href)
+      const url = new URL(config.url ?? '', base)
+      if (!traceable(url)) return config
+      const span = startClient(handle.span, 'explicit', (config.method ?? 'get').toUpperCase(), url)
+      const carrier: Record<string, string> = {}
+      propagator.inject(trace.setSpan(ROOT_CONTEXT, span), carrier, { set: (c, key, value) => { c[key] = value } })
+      const headers = config.headers as { set?: (key: string, value: string) => void } | Record<string, string> | undefined
+      if (headers && typeof (headers as { set?: unknown }).set === 'function')
+        for (const [key, value] of Object.entries(carrier)) (headers as { set: (k: string, v: string) => void }).set(key, value)
+      else config.headers = { ...(headers as Record<string, string> | undefined), ...carrier }
+      ;(config as AxiosLikeConfig & { [axiosSpan]?: Span })[axiosSpan] = span
+      return config
+    },
+    afterAxiosResponse(config, status, error) {
+      // Axios rejects every non-2xx; like fetch, only network errors and 5xx count as span errors.
+      endClient((config as (AxiosLikeConfig & { [axiosSpan]?: Span }) | undefined)?.[axiosSpan], status, status ? undefined : error)
+    },
   }
 
   // Heuristic correlation and the fetch patch are added in Task 4; the patch keeps OpenTelemetry's
