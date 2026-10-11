@@ -35,6 +35,7 @@ public static class CollectorApp
         // Host filtering (on by default in WebApplication) blocks DNS-rebinding pages that resolve to 127.0.0.1.
         builder.Configuration["AllowedHosts"] = string.Join(';', options.AllowedHosts);
         builder.Services.AddSingleton(options);
+        builder.Services.AddSingleton(new Store.TraceStore(options.Limits));
         builder.Services.AddCors(cors => cors.AddPolicy(IngestCors, policy => policy
             .WithOrigins([.. options.AllowedOrigins]).WithMethods("POST").WithHeaders("content-type", "content-encoding")));
         builder.Services.ConfigureHttpJsonOptions(json => json.SerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase);
@@ -47,6 +48,7 @@ public static class CollectorApp
         app.UseDefaultFiles();
         app.UseStaticFiles();
         TraceEndpoints.Map(app);
+        Ingest.IngestEndpoints.Map(app);
         return app;
     }
 }

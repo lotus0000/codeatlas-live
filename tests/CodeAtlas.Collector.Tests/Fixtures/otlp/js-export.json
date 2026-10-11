@@ -1,0 +1,59 @@
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          { "key": "service.name", "value": { "stringValue": "sample-web" } },
+          { "key": "telemetry.sdk.language", "value": { "stringValue": "webjs" } }
+        ],
+        "droppedAttributesCount": 0
+      },
+      "scopeSpans": [
+        {
+          "scope": { "name": "codeatlas-web" },
+          "spans": [
+            {
+              "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
+              "spanId": "00f067aa0ba902b7",
+              "name": "interaction: Create order",
+              "kind": 1,
+              "startTimeUnixNano": "1700000000000000000",
+              "endTimeUnixNano": "1700000000120000000",
+              "attributes": [
+                { "key": "codeatlas.interaction.name", "value": { "stringValue": "Create order" } },
+                { "key": "codeatlas.correlation", "value": { "stringValue": "explicit" } }
+              ],
+              "droppedAttributesCount": 0,
+              "events": [],
+              "droppedEventsCount": 0,
+              "status": { "code": 0 },
+              "links": [],
+              "droppedLinksCount": 0
+            },
+            {
+              "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
+              "spanId": "b7ad6b7169203331",
+              "parentSpanId": "00f067aa0ba902b7",
+              "name": "POST /api/orders",
+              "kind": 3,
+              "startTimeUnixNano": "1700000000010000000",
+              "endTimeUnixNano": "1700000000110000000",
+              "attributes": [
+                { "key": "http.request.method", "value": { "stringValue": "POST" } },
+                { "key": "url.path", "value": { "stringValue": "/api/orders" } },
+                { "key": "http.response.status_code", "value": { "intValue": 201 } },
+                { "key": "codeatlas.correlation", "value": { "stringValue": "explicit" } }
+              ],
+              "droppedAttributesCount": 0,
+              "events": [],
+              "droppedEventsCount": 0,
+              "status": { "code": 0 },
+              "links": [],
+              "droppedLinksCount": 0
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
