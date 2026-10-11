@@ -99,6 +99,16 @@ test('Open in code-server hands the editor the declaration line, as one argument
   expect(readFileSync(recorderFile, 'utf8').trim().split('\n')).toEqual(['-r', '-g', `${file}:${line}`])
 })
 
+test('the app origin can send spans to the collector but cannot reach its other APIs', async ({ request }) => {
+  expect((await request.post(`${urls.app}codeatlas/v1/traces`, { data: { resourceSpans: [] } })).status()).toBe(200)
+  // Anything else under codeatlas/ must not reach the collector (Vite answers unknown paths with the app's HTML).
+  for (const path of ['codeatlas/api/session', 'codeatlas/api/traces', 'codeatlas/api/info']) {
+    const response = await request.get(`${urls.app}${path}`)
+    expect(response.headers()['content-type'] ?? '', path).not.toContain('application/json')
+    expect(await response.text(), path).not.toContain('"token"')
+  }
+})
+
 test('Monaco and source work with every outside request blocked', async ({ context }) => {
   const blocked: string[] = []
   await context.route('**/*', route => {

@@ -137,13 +137,29 @@ if (import.meta.env.DEV)
     m.initCodeAtlas({ collectorUrl: `${import.meta.env.BASE_URL}codeatlas/v1/traces`, serviceName: 'my-app-web' }))
 ```
 
-and let the dev server forward that path to the collector, so the browser never talks to another origin (this also
-works behind code-server's `/absproxy/<port>/`):
+and let the dev server forward **only that path** to the collector, so the browser never talks to another origin and
+pages cannot reach the collector's other endpoints (the session token, opening files):
 
 ```ts
-// vite.config.ts → server.proxy
-'/codeatlas': { target: 'http://127.0.0.1:4318', rewrite: url => url.slice('/codeatlas'.length) },
+// vite.config.ts
+const base = '/' // behind code-server use the path the browser sees, e.g. '/absproxy/5173/'
+export default defineConfig({
+  base,
+  server: {
+    // Behind code-server also set allowedHosts: ['code.example.com'] and hmr: { clientPort: 443 }.
+    proxy: {
+      [`${base}codeatlas/v1/traces`]: {
+        target: 'http://127.0.0.1:4318',
+        rewrite: url => url.slice(`${base}codeatlas`.length),
+      },
+    },
+  },
+})
 ```
+
+The proxy key must include `base`: the runtime posts to `${import.meta.env.BASE_URL}codeatlas/v1/traces`.
+`samples/MinimalApiSample.Web/vite.config.ts` is a complete example that derives `base`, `allowedHosts` and `hmr` from
+one `DEV_PUBLIC_URL` setting.
 
 Link requests to a click:
 

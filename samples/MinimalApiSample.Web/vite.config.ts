@@ -20,7 +20,8 @@ export default defineConfig(({ command, mode }) => {
       // browser's spans reach the collector the same way (also through code-server's /absproxy/).
       proxy: {
         [`${base}api`]: { target: api, rewrite: (url: string) => url.slice(base.length - 1) },
-        [`${base}codeatlas`]: { target: collector, rewrite: (url: string) => url.slice(`${base}codeatlas`.length) },
+        // Only the OTLP endpoint: the collector's other APIs (session token, opening files) stay unreachable from this origin.
+        [`${base}codeatlas/v1/traces`]: { target: collector, rewrite: (url: string) => url.slice(`${base}codeatlas`.length) },
       },
     },
     test: { environment: 'jsdom' },

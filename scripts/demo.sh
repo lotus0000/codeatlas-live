@@ -23,7 +23,8 @@ for port in "$collector_port" "$api_port" "$web_port"; do
   if ss -ltn "sport = :$port" | grep -q LISTEN; then echo "demo: port $port is already in use" >&2; exit 1; fi
 done
 
-db=codeatlas-demo-db
+# One container per database port: a second demo (e.g. the one in test-all.sh) never touches a running one.
+db="codeatlas-demo-db-$db_port"
 pgids=()
 cleanup() {
   # Each process runs in its own process group, so `dotnet run` and `vite` stop together with their children.

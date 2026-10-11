@@ -14,7 +14,7 @@ scripts/demo.sh
 ```
 
 Open the two printed URLs side by side, click **Create Order** in the app, and watch the viewer: the click, the request,
-the endpoint, the handler, and its two database operations. Select the handler to see its source; **Open in
+the endpoint, the handler, and its three database operations (`SELECT`, `UPDATE`, `INSERT`). Select the handler to see its source; **Open in
 code-server** jumps to it. **Create Order (out of stock)** shows a failing request with its exception.
 
 Working in code-server from another machine? Start it from a code-server terminal with your code-server address:

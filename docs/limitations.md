@@ -79,3 +79,13 @@ is unchanged; the host stop flushes queued spans.
 | Selecting a span from Explain or the Parent link does not scroll it into view; switching tabs resets collapsed nodes. | The selection can be off-screen. | Yes |
 | The `parent-cycle` gap kind has no short label in the tree. | The chip shows the raw kind (full wording in the tooltip). | Yes |
 | A 0 ms heuristic bar renders as a small dashed glyph. | Cosmetic. | Yes |
+
+## Samples, demo and E2E: deferred minor issues (Plan 5 final review)
+
+| Issue | Impact | Safe to defer? |
+|---|---|---|
+| On a cold NuGet cache or a slow machine, the parallel first builds can exceed the demo's 2-minute start wait. | "did not start"; running the demo again works. | Yes |
+| `demo.sh` assumes Linux tools (`ss`, `setsid`, `python3`, `curl`) and `dotnet` on `PATH`, and does not check them first. | A missing tool shows up as a start-up timeout. | Yes (code-server/Linux is the target) |
+| A Ctrl+C that lands exactly during a readiness check can leave the script polling until the timeout. | Up to 2 minutes before it exits; cleanup still runs. | Yes |
+| The `dotnet tool install` line has no `--version`. | A same-named package on nuget.org could be picked. | Yes (local feed first in practice) |
+| The source-mapping regression checks lambdas only indirectly. | A wrong lambda mapping would not be caught by that test. | Yes |
