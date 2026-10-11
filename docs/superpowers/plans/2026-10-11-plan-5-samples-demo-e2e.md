@@ -1863,6 +1863,8 @@ await trackInteraction('Create order', async ix => {
 })
 
 // Axios: instrument the instance once; pass ix.axiosConfig() on the requests that belong to the interaction.
+// The type-only import lets TypeScript accept ix.axiosConfig() as an Axios config.
+import type {} from '@codeatlas/web/axios'
 instrumentAxios(api)
 await trackInteraction('Create order', ix => api.post('/orders', body, ix.axiosConfig()))
 ```

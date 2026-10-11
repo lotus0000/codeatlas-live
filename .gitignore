@@ -7,3 +7,4 @@ node_modules/
 .superpowers/
 src/web/dist/
 src/CodeAtlas.Collector/wwwroot/
+samples/MinimalApiSample.Web/dist/

@@ -1,0 +1,42 @@
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, sans-serif;
+}
+body {
+  margin: 0;
+}
+main {
+  max-width: 44rem;
+  margin: 3rem auto;
+  padding: 0 1rem;
+}
+.hint {
+  opacity: 0.7;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1.5rem 0 1rem;
+}
+button {
+  font: inherit;
+  padding: 0.5rem 0.9rem;
+  border-radius: 0.5rem;
+  border: 1px solid color-mix(in oklab, currentColor 25%, transparent);
+  background: transparent;
+  cursor: pointer;
+}
+button:hover {
+  background: color-mix(in oklab, currentColor 8%, transparent);
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th,
+td {
+  text-align: left;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid color-mix(in oklab, currentColor 15%, transparent);
+}
