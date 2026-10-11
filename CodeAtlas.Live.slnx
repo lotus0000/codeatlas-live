@@ -1,10 +1,12 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/CodeAtlas.AspNetCore/CodeAtlas.AspNetCore.csproj" />
+    <Project Path="src/CodeAtlas.Collector/CodeAtlas.Collector.csproj" />
     <Project Path="src/CodeAtlas.Otlp/CodeAtlas.Otlp.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/CodeAtlas.AspNetCore.Tests/CodeAtlas.AspNetCore.Tests.csproj" />
+    <Project Path="tests/CodeAtlas.Collector.Tests/CodeAtlas.Collector.Tests.csproj" />
     <Project Path="tests/CodeAtlas.Otlp.Tests/CodeAtlas.Otlp.Tests.csproj" />
   </Folder>
 </Solution>
