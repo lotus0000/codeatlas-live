@@ -8,11 +8,11 @@ internal static class TraceEndpoints
 {
     public static void Map(IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/info", (CollectorOptions options) => Results.Ok(new
+        app.MapGet("/api/info", (CollectorOptions options, Editor.EditorLauncher editor) => Results.Ok(new
         {
             version = CollectorApp.Version,
             sourceRoots = options.SourceRoots,
-            editor = new { kind = options.EditorKind, available = false },
+            editor = new { kind = editor.Kind, available = editor.Available },
         }));
 
         app.MapGet("/api/traces", (Store.TraceStore store, int? limit) =>
