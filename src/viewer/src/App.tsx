@@ -6,8 +6,10 @@ import type { CollectorInfo, TraceSummary, TraceView } from '@/api/types'
 import { ActivityList } from '@/components/ActivityList'
 import { CorrelationBadge, StatusText } from '@/components/badges'
 import { ExecutionTree } from '@/components/ExecutionTree'
+import { ExplainView } from '@/components/ExplainView'
 import { Inspector } from '@/components/Inspector'
 import { TopBar } from '@/components/TopBar'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { followTarget, hasServer, mergeSummaries } from '@/model/activity'
 import { formatMs, shortId } from '@/model/time'
 import { defaultSelection, findNode } from '@/model/tree'
@@ -32,6 +34,7 @@ export function App({ live = signalRLive }: { live?: LiveSource }) {
   const [view, setView] = useState<TraceView | null>(null)
   const [missing, setMissing] = useState(false)
   const [spanId, setSpanId] = useState<string | null>(null)
+  const [tab, setTab] = useState<'execution' | 'explain'>('execution')
   const [refresh, setRefresh] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const selected = useRef<string | null>(null)
@@ -100,6 +103,11 @@ export function App({ live = signalRLive }: { live?: LiveSource }) {
     setSpanId(null)
   }
 
+  const showSpan = (id: string) => {
+    setTab('execution')
+    setSpanId(id)
+  }
+
   const shown = view && view.summary.traceId === traceId ? view : null
 
   return (
@@ -116,7 +124,18 @@ export function App({ live = signalRLive }: { live?: LiveSource }) {
           {shown ? (
             <>
               <TraceHeader summary={shown.summary} truncated={shown.truncated} />
-              <ExecutionTree key={shown.summary.traceId} view={shown} selected={spanId} onSelect={setSpanId} slowMs={slowMs} />
+              <Tabs value={tab} onValueChange={value => setTab(value as 'execution' | 'explain')} className="flex min-h-0 flex-1 flex-col gap-0">
+                <TabsList className="mx-4 mt-2">
+                  <TabsTrigger value="execution">Execution</TabsTrigger>
+                  <TabsTrigger value="explain">Explain</TabsTrigger>
+                </TabsList>
+                <TabsContent value="execution" className="flex min-h-0 flex-1 flex-col">
+                  <ExecutionTree key={shown.summary.traceId} view={shown} selected={spanId} onSelect={setSpanId} slowMs={slowMs} />
+                </TabsContent>
+                <TabsContent value="explain" className="flex min-h-0 flex-1 flex-col">
+                  <ExplainView view={shown} onSelectSpan={showSpan} />
+                </TabsContent>
+              </Tabs>
             </>
           ) : (
             <p className="m-auto max-w-sm p-6 text-center text-sm text-muted-foreground">
