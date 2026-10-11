@@ -6,6 +6,7 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 import { resourceFromAttributes } from '@opentelemetry/resources'
 import { BatchSpanProcessor, SimpleSpanProcessor, type SpanExporter } from '@opentelemetry/sdk-trace-base'
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web'
+import { labelOf } from './labels'
 import { setRuntime, type AxiosLikeConfig, type InteractionHandle, type Runtime } from './registry'
 
 const axiosSpan = Symbol('codeatlas.axiosSpan')
@@ -58,6 +59,50 @@ export function initCodeAtlas(options: CodeAtlasOptions): CodeAtlasHandle {
     url.href !== collectorUrl &&
     (url.origin === location.origin || propagateTo.some(p => (typeof p === 'string' ? url.href.startsWith(p) : p.test(url.href))))
 
+  const windowMs = options.windowMs ?? 1000
+  const textLabels = options.textLabels ?? true
+
+  // A click is turned into a span only if a request follows it, and dropped if the click starts an explicit interaction.
+  type Pending = { label: string; source: string; event: string; at: number; wallMs: number; span?: Span }
+  let pending: Pending | null = null
+
+  function onInteraction(event: Event, kind: 'click' | 'submit') {
+    const target = event.target instanceof Element ? event.target : null
+    const element = kind === 'submit' ? target : target?.closest('[data-codeatlas],button,a,[role=button],input[type=submit],input[type=button]')
+    if (!element) return
+    const submitter = kind === 'submit' ? (event as SubmitEvent).submitter : null
+    const { label, source } = submitter ? labelOf(submitter, 'click', textLabels) : labelOf(element, kind, textLabels)
+    pending = { label, source, event: kind, at: performance.now(), wallMs: Date.now() }
+  }
+
+  function heuristicSpan(p: Pending): Span {
+    if (!p.span) {
+      p.span = tracer.startSpan(`interaction: ${p.label}`, {
+        startTime: p.wallMs,
+        attributes: {
+          'codeatlas.interaction.name': p.label,
+          'codeatlas.interaction.label_source': p.source,
+          'codeatlas.interaction.event': p.event,
+          'codeatlas.correlation': 'heuristic',
+        },
+      }, ROOT_CONTEXT)
+      p.span.end(p.wallMs)
+    }
+    return p.span
+  }
+
+  function heuristicFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+    const recent = pending && performance.now() - pending.at <= windowMs ? pending : null
+    const request = input instanceof Request ? input : undefined
+    const carriesTrace = new Headers(init?.headers ?? request?.headers).has('traceparent')
+    // Checked here too, so an untraceable request (collector, cross-origin) never creates the interaction span.
+    if (!recent || carriesTrace || !traceable(resolve(input))) return original(input, init)
+    return tracedFetch(heuristicSpan(recent), 'heuristic', input, init)
+  }
+
+  const onClick = (event: Event) => onInteraction(event, 'click')
+  const onSubmit = (event: Event) => onInteraction(event, 'submit')
+
   function startClient(parent: Span, correlation: string, method: string, url: URL): Span {
     return tracer.startSpan(`${method} ${url.pathname}`, {
       kind: SpanKind.CLIENT,
@@ -93,6 +138,7 @@ export function initCodeAtlas(options: CodeAtlasOptions): CodeAtlasHandle {
 
   const runtime: Runtime = {
     startInteraction(name) {
+      pending = null
       const span = tracer.startSpan(`interaction: ${name}`, {
         attributes: { 'codeatlas.interaction.name': name, 'codeatlas.correlation': 'explicit' },
       }, ROOT_CONTEXT)
@@ -126,15 +172,18 @@ export function initCodeAtlas(options: CodeAtlasOptions): CodeAtlasHandle {
     },
   }
 
-  // Heuristic correlation and the fetch patch are added in Task 4; the patch keeps OpenTelemetry's
-  // `__original` convention so the OTLP exporter bypasses it.
-  const patched = Object.assign(((input: RequestInfo | URL, init?: RequestInit) => original(input, init)) as Fetch, { __original: original })
+  // The patch keeps OpenTelemetry's `__original` convention so the OTLP exporter bypasses it.
+  const patched = Object.assign(((input: RequestInfo | URL, init?: RequestInit) => heuristicFetch(input, init)) as Fetch, { __original: original })
+  document.addEventListener('click', onClick, { capture: true, passive: true })
+  document.addEventListener('submit', onSubmit, { capture: true, passive: true })
   window.fetch = patched
   setRuntime(runtime)
 
   const handle: CodeAtlasHandle = {
     collectorUrl,
     async shutdown() {
+      document.removeEventListener('click', onClick, { capture: true })
+      document.removeEventListener('submit', onSubmit, { capture: true })
       if (window.fetch === patched) window.fetch = original
       setRuntime(undefined)
       active = undefined
