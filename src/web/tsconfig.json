@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "skipLibCheck": true,
+    "types": ["vite/client"],
+    "paths": {
+      "@codeatlas/web": ["./src/index.ts"],
+      "@codeatlas/web/runtime": ["./src/runtime.ts"]
+    }
+  },
+  "include": ["src", "test"]
+}
