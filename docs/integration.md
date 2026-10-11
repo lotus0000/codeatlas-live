@@ -1,6 +1,6 @@
 # Integrating CodeAtlas Live into an ASP.NET Core app
 
-CodeAtlas runs only in Debug builds and only in Development. Release builds contain none of it
+CodeAtlas runs only in Debug builds and, by default, only in Development. Release builds contain none of it
 (`scripts/verify-release.sh` proves this on every change).
 
 ## 1. Make the packages available
@@ -73,21 +73,41 @@ group.MapPost("/", Create).WithValidation<ProductRequest>()
 | Option | Default | Config key |
 |---|---|---|
 | `Endpoint` | `http://127.0.0.1:4318/v1/traces` | `CodeAtlas:Endpoint` |
-| `EnableOutsideDevelopment` | `false` | `CodeAtlas:Enabled` |
+| `EnableOutsideDevelopment` | `false` | `CodeAtlas:Enabled` (`true` turns it on anywhere, `false` turns it off even in Development) |
 | `ServiceName` | application name | — |
 | `KeepDbStatements` | `false` (SQL replaced by "operation + tables") | — |
 | `WrapperSpansBesideAppTracing` | `false` | — |
 | `QueueCapacity` / `ExportTimeout` | 2048 / 2 s | — |
 
+## Invalid settings
+
+Settings never stop your app:
+
+| Setting | When invalid |
+|---|---|
+| `CodeAtlas:Enabled` not `true`/`false` | ignored (warning); the Development default applies |
+| `Endpoint` not an absolute `http(s)` URL | CodeAtlas disables itself (warning); the app runs normally |
+| `QueueCapacity` < 1, `ExportTimeout` ≤ 0 | replaced by 2048 / 2 s (warning) |
+| `AddCodeAtlas()` called more than once | only the first call counts (warning); no duplicate spans |
+
+Warnings are logged once at start-up under the `CodeAtlas` prefix.
+
 ## If your app already uses OpenTelemetry tracing
 
-CodeAtlas runs its own private tracer provider and never changes your sampler, exporters, instrumentation or the data
-they send, and its own export traffic never shows up in your HTTP client metrics. Because its endpoint/action/handler spans would become parents your own tool never receives, they are
-**off** in that case (a warning is logged once). You still get server, database and HttpClient spans.
+CodeAtlas is then a pure observer: it follows **your** sampling. It shows only the requests your sampler records, and
+never changes your sampler's decisions, exporters, enrichment callbacks, processors, the activities they see, or the
+`traceparent` sent downstream. Its own export traffic never shows up in your traces or HTTP client metrics.
+A warning at start-up says so, and the viewer shows a banner. To see every request in Development, sample everything
+there (for example `AlwaysOnSampler` in `appsettings.Development.json`-driven configuration).
+
+Endpoint/action/handler spans would become parents your own tool never receives, so they are **off** in that case.
+`WrapperSpansBesideAppTracing = true` turns them on (inside sampled requests only) and accepts those broken parent
+links in your own tool. You always get server, database and HttpClient spans.
 
 ## Privacy
 
-Never sent: SQL text and parameters, connection strings, URL query strings, request/response bodies, header values
+Never sent: SQL text and parameters (SQL becomes "operation + tables"; if the text cannot be read reliably, only the
+operation), connection strings, URL query strings, request/response bodies, header values
 (including `user_agent.original` and any `http.*.header.*` tags), client addresses, `enduser.*` tags and method
 arguments. Sent: exception messages and stack traces (Development only). If your own instrumentation adds other tags
 to request activities (for example through an enrichment callback), those tags are sent too.

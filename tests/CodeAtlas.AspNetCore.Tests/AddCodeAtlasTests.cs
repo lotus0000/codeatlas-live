@@ -3,6 +3,8 @@ using CodeAtlas.AspNetCore.Tracing;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Proto.Trace.V1;
 using OpenTelemetry.Trace;
@@ -129,5 +131,94 @@ public class AddCodeAtlasTests
         var runtime = app.App.Services.GetRequiredService<CodeAtlasRuntime>();
         Assert.True(runtime.AppHasTracing);
         Assert.False(runtime.WrapperSpansEnabled);
+    }
+
+    [Fact]
+    public async Task Enabled_false_turns_it_off_even_in_Development()
+    {
+        await using var app = await TestApp.StartAsync(Map, b => b.Configuration["CodeAtlas:Enabled"] = "false");
+
+        await app.SendAsync(HttpMethod.Get, "/orders/1");
+        await Task.Delay(300);
+
+        Assert.Null(app.App.Services.GetService<CodeAtlasRuntime>());
+        Assert.Empty(app.Sink.Spans);
+    }
+
+    [Fact]
+    public async Task Calling_AddCodeAtlas_twice_registers_it_once_and_warns()
+    {
+        var sink = new RecordingSink();
+        var logs = new AlwaysOnLoggerProvider();
+        await using var app = await TestApp.StartAsync(
+            Map,
+            b =>
+            {
+                b.Logging.AddProvider(logs);
+                b.AddCodeAtlas(o => { o.SinkFactory = _ => sink; o.BatchDelay = TimeSpan.FromMilliseconds(10); });
+            },
+            sink: sink);
+
+        var (_, traceId) = await app.SendAsync(HttpMethod.Get, "/orders/1");
+        await sink.WaitForTraceAsync(traceId);
+        await Task.Delay(300);
+
+        Assert.Single(app.App.Services.GetServices<IHostedService>().OfType<CodeAtlasTracing>());
+        Assert.Single(sink.Spans, s => s.TraceId == traceId && s.Span.Kind == Span.Types.SpanKind.Server);
+        Assert.Single(sink.Spans, s => s.TraceId == traceId && (string?)s.Attr("codeatlas.component") == "endpoint");
+        Assert.Contains(logs.Messages, m => m.StartsWith("Warning") && m.Contains("AddCodeAtlas was called more than once"));
+    }
+
+    [Fact]
+    public async Task An_unreadable_Enabled_value_is_ignored_with_a_warning()
+    {
+        var logs = new AlwaysOnLoggerProvider();
+        await using var app = await TestApp.StartAsync(Map, b =>
+        {
+            b.Logging.AddProvider(logs);
+            b.Configuration["CodeAtlas:Enabled"] = "yes please";
+        });
+
+        var (response, traceId) = await app.SendAsync(HttpMethod.Get, "/orders/1");
+
+        Assert.Equal(200, (int)response.StatusCode);
+        Assert.NotEmpty(await app.Sink.WaitForTraceAsync(traceId)); // Development default still applies
+        Assert.Contains(logs.Messages, m => m.StartsWith("Warning") && m.Contains("CodeAtlas:Enabled"));
+    }
+
+    [Theory]
+    [InlineData("not a url")]
+    [InlineData("ftp://127.0.0.1/v1/traces")]
+    public async Task An_invalid_endpoint_disables_CodeAtlas_instead_of_crashing_the_app(string endpoint)
+    {
+        var logs = new AlwaysOnLoggerProvider();
+        await using var app = await TestApp.StartAsync(Map, b =>
+        {
+            b.Logging.AddProvider(logs);
+            b.Configuration["CodeAtlas:Endpoint"] = endpoint;
+        }, realHttpSink: true);
+
+        var (response, _) = await app.SendAsync(HttpMethod.Get, "/orders/1");
+
+        Assert.Equal(200, (int)response.StatusCode);
+        Assert.Null(app.App.Services.GetServices<IHostedService>().OfType<CodeAtlasTracing>().Single().Processor);
+        Assert.Contains(logs.Messages, m => m.StartsWith("Warning") && m.Contains("CodeAtlas is disabled") && m.Contains(endpoint));
+    }
+
+    [Fact]
+    public async Task Invalid_queue_and_timeout_settings_fall_back_to_defaults()
+    {
+        var logs = new AlwaysOnLoggerProvider();
+        await using var app = await TestApp.StartAsync(Map, b => b.Logging.AddProvider(logs), o =>
+        {
+            o.QueueCapacity = 0;
+            o.ExportTimeout = TimeSpan.FromSeconds(-1);
+        });
+
+        var (_, traceId) = await app.SendAsync(HttpMethod.Get, "/orders/1");
+
+        Assert.NotEmpty(await app.Sink.WaitForTraceAsync(traceId));
+        Assert.Contains(logs.Messages, m => m.Contains("QueueCapacity"));
+        Assert.Contains(logs.Messages, m => m.Contains("ExportTimeout"));
     }
 }

@@ -70,4 +70,18 @@ public class FailureIsolationTests
             .SelectMany(s => s.Attributes).Where(a => a.Key is "url.full" or "server.port").Select(a => a.Value.ToString());
         Assert.DoesNotContain(urls, u => u.Contains(collector.Port.ToString()));
     }
+
+    [Fact]
+    public async Task Stopping_the_app_flushes_spans_still_queued()
+    {
+        var sink = new RecordingSink();
+        var app = await TestApp.StartAsync(Map, sink: sink, codeAtlas: o => o.BatchDelay = TimeSpan.FromMinutes(1));
+
+        var (_, traceId) = await app.SendAsync(HttpMethod.Get, "/ping");
+        await Task.Delay(200);
+        Assert.Empty(sink.Spans); // still waiting for the batch delay
+        await app.DisposeAsync();
+
+        Assert.Contains(sink.Spans, s => s.TraceId == traceId);
+    }
 }

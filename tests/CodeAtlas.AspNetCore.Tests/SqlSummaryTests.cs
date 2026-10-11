@@ -27,4 +27,25 @@ public class SqlSummaryTests
         Assert.Equal("SELECT t", summary);
         Assert.DoesNotContain("secret", summary);
     }
+
+    // Fail closed: when the text has constructs the summarizer cannot read reliably, keep only the operation.
+    [Theory]
+    [InlineData(@"INSERT INTO notes VALUES (E'it\'s from Alice')", "INSERT")]
+    [InlineData("SELECT $$ from secret_table $$ FROM t", "SELECT")]
+    [InlineData("SELECT $body$ join secret_table $body$ FROM t", "SELECT")]
+    [InlineData("SELECT * FROM t WHERE a = 'unterminated from secret_table", "SELECT")]
+    [InlineData("SELECT * FROM t /* unterminated from secret_table", "SELECT")]
+    [InlineData("vacuum from secret_table", "SQL")]
+    public void Unreliable_text_yields_only_the_operation(string sql, string expected)
+    {
+        var summary = SqlSummary.Summarize(sql);
+
+        Assert.Equal(expected, summary);
+        Assert.DoesNotContain("secret", summary);
+        Assert.DoesNotContain("Alice", summary);
+    }
+
+    [Fact]
+    public void Positional_parameters_are_not_mistaken_for_dollar_quotes() =>
+        Assert.Equal("SELECT products", SqlSummary.Summarize("SELECT name FROM products WHERE sku = $1 AND id = $2"));
 }
