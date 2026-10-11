@@ -1,11 +1,12 @@
 import { Fragment, type ReactNode } from 'react'
-import type { CodeRef, CollectorInfo, NodeView, SpanEvent, TraceView } from '@/api/types'
+import type { CollectorInfo, NodeView, SpanEvent, TraceView } from '@/api/types'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 import { clock, formatMs } from '@/model/time'
 import { ancestors, findNode, isError } from '@/model/tree'
 import { CorrelationBadge, GapNote, KindTag, RoutingChip } from './badges'
+import { SourcePanel } from './SourcePanel'
 
 export function Inspector({ view, spanId, info, dark, onSelect }: {
   view: TraceView | null
@@ -71,14 +72,12 @@ export function Inspector({ view, spanId, info, dark, onSelect }: {
           {span.events.filter(e => e.name === 'exception').map((event, i) => <ExceptionBlock key={i} event={event} />)}
 
           <section aria-label="Source">
-            {node.code ? <MethodIdentity code={node.code} /> : <NoSource node={node} owner={owner} onSelect={onSelect} />}
+            {node.code ? <SourcePanel code={node.code} info={info} dark={dark} /> : <NoSource node={node} owner={owner} onSelect={onSelect} />}
           </section>
 
           <Attributes attributes={span.attributes} />
         </div>
       </ScrollArea>
-      <span className="sr-only">{dark ? 'dark theme' : 'light theme'}</span>
-      <span className="sr-only">{info?.editor.kind}</span>
     </aside>
   )
 }
@@ -92,14 +91,6 @@ function Fact({ label, mono, children }: { label: string; mono?: boolean; childr
   )
 }
 
-function MethodIdentity({ code }: { code: CodeRef }) {
-  return (
-    <p className="text-xs text-muted-foreground">
-      {code.evidence === 'routing' ? 'Route target (routing metadata): ' : 'Executed method: '}
-      <span className="font-mono text-foreground">{code.function}</span>
-    </p>
-  )
-}
 
 function NoSource({ node, owner, onSelect }: { node: NodeView; owner: NodeView | undefined; onSelect: (spanId: string) => void }) {
   return (

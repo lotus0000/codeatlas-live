@@ -116,3 +116,15 @@
     @apply bg-background font-sans text-foreground antialiased;
   }
 }
+
+/* Monaco decorations: the verified declaration range and the PDB's executable lines. */
+.ca-declaration {
+  background: color-mix(in oklab, var(--executed) 10%, transparent);
+}
+.ca-executable {
+  background: var(--executed);
+  border-radius: 9999px;
+  width: 6px !important;
+  height: 6px !important;
+  margin: 6px 0 0 8px;
+}

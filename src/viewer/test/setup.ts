@@ -21,3 +21,16 @@ Object.defineProperty(window, 'matchMedia', {
 })
 globalThis.ResizeObserver ??= class { observe() {} unobserve() {} disconnect() {} } as unknown as typeof ResizeObserver
 Element.prototype.scrollIntoView ??= function () {}
+
+// Monaco needs a real browser. Tests see a <pre> that records what it was asked to show; the E2E suite (Plan 5) runs the real one.
+vi.mock('@/components/MonacoView', async () => {
+  const { createElement } = await import('react')
+  return {
+    default: (props: { text: string; navigationLine: number; displayStart: number; displayEnd: number }) =>
+      createElement('pre', {
+        'data-testid': 'monaco',
+        'data-line': props.navigationLine,
+        'data-range': `${props.displayStart}-${props.displayEnd}`,
+      }, props.text),
+  }
+})

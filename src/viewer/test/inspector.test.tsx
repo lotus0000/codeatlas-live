@@ -58,4 +58,12 @@ describe('inspector', () => {
     render(<Inspector view={heuristic} spanId={orphan.span.spanId} info={info} dark={false} onSelect={() => {}} />)
     expect(screen.getByText(`${orphan.span.parentSpanId} (not received)`)).toBeInTheDocument()
   })
+
+  it('a span with a method identity shows its source panel', async () => {
+    const { stubApi, sourceFound } = await import('./support')
+    stubApi({ 'api/source?': sourceFound })
+    const handler = byKind(success, 'handler')
+    render(<Inspector view={success} spanId={handler.span.spanId} info={info} dark={false} onSelect={() => {}} />)
+    expect(await screen.findByTestId('monaco')).toBeInTheDocument()
+  })
 })
