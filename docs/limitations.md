@@ -1,7 +1,6 @@
 # Known limitations
 
-Backend integration (`CodeAtlas.AspNetCore`, Plan 1) and collector (`CodeAtlas.Collector`, Plan 2). Plan 5 extends
-this file with browser and viewer limitations.
+What CodeAtlas Live does not do, by design, and the known minor issues deferred from each plan's final review.
 
 ## By design
 
@@ -15,6 +14,11 @@ this file with browser and viewer limitations.
 | Tags that the app's own instrumentation adds (other than headers, client address and `enduser.*`) are exported. | CodeAtlas cannot know which custom tags are sensitive. |
 | Database tracing is Npgsql only. | MVP scope. |
 | In Development, an exception handled by the developer exception page gives a server span with status 500 but no "unhandled" flag; the exception is on the endpoint/action/handler span. | The page handles it inside the pipeline. |
+| A request that starts within 1 s of a click or submit, without `trackInteraction`, is linked to that click by timing. A follow-up or polling request can be linked too. | It is a heuristic; the viewer marks those links "heuristic" (spec §6.2). Use `trackInteraction` for proof. |
+| Interaction labels may use button or link text. | Readable labels; `textLabels: false` falls back to the tag name. Typed values are never read. |
+| Work outside a request (start-up, background services) appears as separate root traces without an interaction. | There is no request to attach it to. |
+| The samples' database spans need Docker for Postgres; CodeAtlas itself does not. | Npgsql is the MVP's only database instrumentation. |
+| The demo's Postgres container is removed when the demo stops (`--rm`); sample data does not persist between runs. | A clean demo every time. |
 
 ## Deferred minor issues
 
