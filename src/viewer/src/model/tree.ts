@@ -11,11 +11,16 @@ export interface Row {
   slow: boolean
 }
 
-function* walk(nodes: NodeView[]): Generator<NodeView> {
-  for (const node of nodes) {
-    yield node
-    yield* walk(node.children)
+/** Pre-order, iterative: deep chains (up to 2,000 spans) must not cost O(n · depth). */
+function walk(nodes: NodeView[]): NodeView[] {
+  const out: NodeView[] = []
+  const stack = [...nodes].reverse()
+  while (stack.length > 0) {
+    const node = stack.pop()!
+    out.push(node)
+    for (let i = node.children.length - 1; i >= 0; i--) stack.push(node.children[i])
   }
+  return out
 }
 
 export function traceOrigin(roots: NodeView[]): bigint {
@@ -75,19 +80,19 @@ export function findNode(roots: NodeView[], spanId: string): NodeView | undefine
 
 /** The chain from a root down to the node's parent. Empty for roots. */
 export function ancestors(roots: NodeView[], spanId: string): NodeView[] {
-  const search = (nodes: NodeView[], path: NodeView[]): NodeView[] | undefined => {
-    for (const node of nodes) {
-      if (node.span.spanId === spanId) return path
-      const found = search(node.children, [...path, node])
-      if (found) return found
-    }
-    return undefined
+  const parent = new Map<NodeView, NodeView>()
+  let target: NodeView | undefined
+  for (const node of walk(roots)) {
+    if (node.span.spanId === spanId) target = node
+    for (const child of node.children) parent.set(child, node)
   }
-  return search(roots, []) ?? []
+  const chain: NodeView[] = []
+  for (let node = target && parent.get(target); node; node = parent.get(node)) chain.push(node)
+  return chain.reverse()
 }
 
 /** The first executed method if there is one (what the developer usually wants), else the first server span, else the first root. */
 export function defaultSelection(roots: NodeView[]): string | undefined {
-  const all = [...walk(roots)]
+  const all = walk(roots)
   return (all.find(n => n.code?.evidence === 'executed') ?? all.find(n => n.kind === 'server') ?? all[0])?.span.spanId
 }

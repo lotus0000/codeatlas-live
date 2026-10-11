@@ -52,7 +52,14 @@ export function resetSessionToken() {
 /** Asks the collector to open the method in the configured editor. Only the identity is sent; the collector finds the file. */
 export async function openInEditor(code: CodeRef): Promise<OpenResult> {
   for (let attempt = 0; ; attempt++) {
-    session ??= getJson<{ token: string }>('api/session').then(s => s.token)
+    session ??= getJson<{ token: string }>('api/session').then(
+      s => s.token,
+      error => {
+        // Do not keep a failed request: the next Open asks again.
+        session = undefined
+        throw error
+      },
+    )
     const response = await fetch(apiUrl('api/open'), {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'X-CodeAtlas-Token': await session },

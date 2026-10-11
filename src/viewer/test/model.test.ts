@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { TraceSummary } from '../src/api/types'
+import type { NodeView, TraceSummary } from '../src/api/types'
 import { followTarget, hasServer, matches, MAX_TRACES, mergeSummaries, statusTone } from '../src/model/activity'
 import { clock, formatMs, offsetMs, shortId } from '../src/model/time'
 import { ancestors, defaultSelection, findNode, isError, rows, totalMs, traceOrigin } from '../src/model/tree'
@@ -105,6 +105,22 @@ describe('tree', () => {
     expect(defaultSelection(success.roots)).toBe(handler.span.spanId)
     // No executed method in the heuristic trace: the first server span is selected.
     expect(findNode(heuristic.roots, defaultSelection(heuristic.roots)!)!.kind).toBe('server')
+  })
+
+  it('stays fast on a 2,000-deep chain', () => {
+    const base = success.roots[0]
+    let node: NodeView = { ...base, children: [] }
+    for (let i = 0; i < 2000; i++) node = { ...base, span: { ...base.span, spanId: `s${i}` }, children: [node] }
+    const roots = [node]
+
+    const started = performance.now()
+    const origin = traceOrigin(roots)
+    totalMs(roots, origin)
+    rows(roots, new Set(), 200)
+    findNode(roots, base.span.spanId)
+    ancestors(roots, base.span.spanId)
+    defaultSelection(roots)
+    expect(performance.now() - started).toBeLessThan(60)
   })
 
   it('handles nodes whose parent never arrived as extra roots', () => {

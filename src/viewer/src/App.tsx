@@ -118,7 +118,7 @@ export function App({ live = signalRLive }: { live?: LiveSource }) {
           {error}
         </p>
       )}
-      <div className="grid min-h-0 flex-1 grid-cols-[300px_minmax(0,1fr)_420px]">
+      <div className="grid min-h-0 flex-1 grid-cols-[260px_minmax(0,1fr)_360px] 2xl:grid-cols-[300px_minmax(0,1fr)_420px]">
         <ActivityList summaries={summaries} selected={traceId} filter={filter} onFilter={setFilter} onSelect={choose} />
         <main aria-label="Trace" className="flex min-h-0 flex-col border-x">
           {shown ? (

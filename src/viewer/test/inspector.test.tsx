@@ -59,6 +59,17 @@ describe('inspector', () => {
     expect(screen.getByText(`${orphan.span.parentSpanId} (not received)`)).toBeInTheDocument()
   })
 
+  it('a routing-only method is not presented as executed', () => {
+    const endpoint = byKind(heuristic, 'endpoint')
+    render(<Inspector view={heuristic} spanId={endpoint.span.spanId} info={info} dark={false} onSelect={() => {}} />)
+
+    const panel = screen.getByRole('complementary', { name: 'Inspector' })
+    expect(within(panel).getByRole('heading', { name: endpoint.span.name })).toBeInTheDocument()
+    expect(within(panel).queryByRole('heading', { name: endpoint.code!.function })).toBeNull()
+    expect(within(panel).queryByText('executed')).toBeNull()
+    expect(within(panel).getByText('route → Orders.LoadAsync')).toBeInTheDocument()
+  })
+
   it('a span with a method identity shows its source panel', async () => {
     const { stubApi, sourceFound } = await import('./support')
     stubApi({ 'api/source?': sourceFound })

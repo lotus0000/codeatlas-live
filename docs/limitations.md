@@ -61,3 +61,17 @@ is unchanged; the host stop flushes queued spans.
 | An old handle's `shutdown()` after a re-init also unregisters the newer runtime; a second `shutdown()` shuts the provider down twice. | Tracing stops after unusual HMR/StrictMode sequences until reload. | Yes |
 | `pack-local.sh` does not clean `src/web/dist` before building. | Files from renamed or removed sources could ship in the local tarball. | Yes (local feed only) |
 | When the app has wrapped `fetch`, the runtime adds a hidden same-origin `<iframe>` to get a native fetch for OTLP exports. | One extra hidden element under `<html>` in development. | By design |
+
+## Viewer: deferred minor issues (Plan 4 final review)
+
+| Issue | Impact | Safe to defer? |
+|---|---|---|
+| Monaco's hover is not bundled, so the executable-line dot has no tooltip. | The blue gutter dot is unexplained. | Yes (cosmetic) |
+| After a collector restart, old traces stay in the list until reload. | Clicking one says it was evicted. | Yes |
+| The error banner is cleared only by a successful list reload; a failed trace load keeps "Loading trace…". | A stale error message can stay visible. | Yes |
+| Switching away from an evicted trace briefly shows the "no longer in the collector" text. | A short flash of the wrong message. | Yes |
+| "It ran inside …" picks the nearest executed ancestor even across a service boundary. | A downstream service's database span can name the caller's handler. | Yes (multi-service traces only) |
+| The tree has no arrow-key navigation; every row is a tab stop. | Keyboard use of large traces is slow. | Yes |
+| Selecting a span from Explain or the Parent link does not scroll it into view; switching tabs resets collapsed nodes. | The selection can be off-screen. | Yes |
+| The `parent-cycle` gap kind has no short label in the tree. | The chip shows the raw kind (full wording in the tooltip). | Yes |
+| A 0 ms heuristic bar renders as a small dashed glyph. | Cosmetic. | Yes |

@@ -26,6 +26,13 @@ describe('explain', () => {
     expect(within(errors).getByText(/System\.InvalidOperationException: Out of stock: SKU-42/)).toBeInTheDocument()
   })
 
+  it('routing sentences have their own section, never under executed code', () => {
+    render(<ExplainView view={heuristic} onSelectSpan={() => {}} />)
+    const routing = heuristic.explanation.find(l => l.kind === 'routing')!
+    expect(within(screen.getByRole('region', { name: 'Routing metadata' })).getByText(routing.text)).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Executed code' })).toBeNull()
+  })
+
   it('keeps lines of kinds it does not know', () => {
     render(<ExplainView view={{ ...success, explanation: [{ kind: 'future-kind', text: 'Something new.', spanIds: [] }] }} onSelectSpan={() => {}} />)
     expect(within(screen.getByRole('region', { name: 'Other' })).getByText('Something new.')).toBeInTheDocument()

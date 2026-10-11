@@ -1,5 +1,5 @@
 import { ChevronRight, TriangleAlert } from 'lucide-react'
-import { useState, type KeyboardEvent } from 'react'
+import { memo, useCallback, useMemo, useState, type KeyboardEvent } from 'react'
 import type { TraceView } from '@/api/types'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -8,7 +8,9 @@ import { formatMs } from '@/model/time'
 import { rows, totalMs, traceOrigin, type Row } from '@/model/tree'
 import { CorrelationBadge, GapChip, KindTag, RoutingChip } from './badges'
 
-const MAX_INDENT_LEVELS = 24
+// Indentation stops growing here so deep chains keep room for names; the real depth is shown instead.
+const MAX_INDENT_LEVELS = 12
+const INDENT_PX = 12
 const columns = 'grid grid-cols-[minmax(0,1fr)_minmax(120px,30%)_64px] gap-x-3'
 
 export function ExecutionTree({ view, selected, onSelect, slowMs }: {
@@ -18,15 +20,18 @@ export function ExecutionTree({ view, selected, onSelect, slowMs }: {
   slowMs: number
 }) {
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set())
-  const total = Math.max(totalMs(view.roots, traceOrigin(view.roots)), 0.001)
-  const list = rows(view.roots, collapsed, slowMs)
-  const toggle = (spanId: string) =>
-    setCollapsed(current => {
-      const next = new Set(current)
-      if (next.has(spanId)) next.delete(spanId)
-      else next.add(spanId)
-      return next
-    })
+  const total = useMemo(() => Math.max(totalMs(view.roots, traceOrigin(view.roots)), 0.001), [view])
+  const list = useMemo(() => rows(view.roots, collapsed, slowMs), [view, collapsed, slowMs])
+  const toggle = useCallback(
+    (spanId: string) =>
+      setCollapsed(current => {
+        const next = new Set(current)
+        if (next.has(spanId)) next.delete(spanId)
+        else next.add(spanId)
+        return next
+      }),
+    [],
+  )
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -82,7 +87,7 @@ function Legend() {
   )
 }
 
-function TreeRow({ row, total, selected, collapsed, onToggle, onSelect }: {
+const TreeRow = memo(function TreeRow({ row, total, selected, collapsed, onToggle, onSelect }: {
   row: Row
   total: number
   selected: boolean
@@ -112,7 +117,7 @@ function TreeRow({ row, total, selected, collapsed, onToggle, onSelect }: {
       onKeyDown={onKeyDown}
       className={cn(columns, 'cursor-pointer items-start px-4 py-1 text-sm outline-none hover:bg-accent/60 focus-visible:bg-accent', selected && 'bg-accent')}
     >
-      <div className="min-w-0" style={{ paddingLeft: Math.min(row.depth, MAX_INDENT_LEVELS) * 16 }}>
+      <div className="min-w-0 overflow-hidden" style={{ paddingLeft: Math.min(row.depth, MAX_INDENT_LEVELS) * INDENT_PX }}>
         <div className={cn('flex min-w-0 items-center gap-1.5', heuristic && 'border-l border-dashed border-heuristic pl-1.5')}>
           {row.hasChildren ? (
             <button
@@ -129,8 +134,9 @@ function TreeRow({ row, total, selected, collapsed, onToggle, onSelect }: {
           ) : (
             <span className="w-3.5 shrink-0" />
           )}
+          {row.depth > MAX_INDENT_LEVELS && <span className="shrink-0 font-mono text-[11px] text-muted-foreground">depth {row.depth + 1}</span>}
           <KindTag kind={node.kind} />
-          <span className={cn('min-w-12 truncate', row.error && 'text-error')} title={node.span.name}>
+          <span className={cn('min-w-20 truncate', row.error && 'text-error')} title={node.span.name}>
             {node.span.name}
           </span>
           {node.code?.evidence === 'routing' && <RoutingChip fn={node.code.function} />}
@@ -159,4 +165,4 @@ function TreeRow({ row, total, selected, collapsed, onToggle, onSelect }: {
       </span>
     </div>
   )
-}
+})

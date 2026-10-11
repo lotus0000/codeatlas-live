@@ -79,6 +79,9 @@ describe('execution tree', () => {
 
     const last = items().at(-1)!
     expect(last).toHaveAttribute('aria-level', '301')
-    expect((last.firstElementChild as HTMLElement).style.paddingLeft).toBe('384px')
+    const nameCell = last.firstElementChild as HTMLElement
+    expect(nameCell.style.paddingLeft).toBe('144px')
+    expect(nameCell).toHaveClass('overflow-hidden')
+    expect(within(last).getByText('depth 301')).toBeInTheDocument()
   })
 })

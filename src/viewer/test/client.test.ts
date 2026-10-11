@@ -55,6 +55,20 @@ describe('API client', () => {
     expect([sessions, opens]).toEqual([2, 2])
   })
 
+  it('a failed session request is retried on the next Open', async () => {
+    let sessions = 0
+    stubApi({
+      'api/session': () => {
+        if (++sessions === 1) throw new TypeError('Failed to fetch')
+        return Response.json({ token: 'abc' })
+      },
+      'api/open': { message: 'ok', file: 'f', line: 1 },
+    })
+
+    await expect(openInEditor(handler.code!)).rejects.toThrow('Failed to fetch')
+    await expect(openInEditor(handler.code!)).resolves.toMatchObject({ line: 1 })
+  })
+
   it('surfaces the collector\'s problem detail', async () => {
     stubApi({ 'api/session': { token: 'abc' }, 'api/open': () => Response.json({ title: 'Bad Gateway', detail: 'code-server exited with 1' }, { status: 502 }) })
     await expect(openInEditor(handler.code!)).rejects.toThrow('code-server exited with 1')

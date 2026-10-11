@@ -8,7 +8,8 @@ import { findNode } from '@/model/tree'
 // The order of spec §8: entry point → executed code → database and HTTP → slowest → exceptions → visibility gaps.
 const sections = [
   { title: 'Entry point', kinds: ['entry', 'request'] },
-  { title: 'Executed code', kinds: ['executed', 'routing'] },
+  { title: 'Executed code', kinds: ['executed'] },
+  { title: 'Routing metadata', kinds: ['routing'] },
   { title: 'Database and HTTP', kinds: ['database', 'http'] },
   { title: 'Timing', kinds: ['slowest'] },
   { title: 'Errors', kinds: ['exception'] },

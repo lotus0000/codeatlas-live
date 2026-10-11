@@ -35,12 +35,15 @@ export function Inspector({ view, spanId, info, dark, onSelect }: {
           <div className="space-y-1.5">
             <div className="flex flex-wrap items-center gap-1.5">
               <KindTag kind={node.kind} />
-              <Badge variant="outline" className="border-executed/40 text-executed">executed</Badge>
+              {node.code?.evidence !== 'routing' && <Badge variant="outline" className="border-executed/40 text-executed">executed</Badge>}
               {node.code?.evidence === 'routing' && <RoutingChip fn={node.code.function} />}
               {node.correlation && <CorrelationBadge kind={node.correlation} />}
               {isError(node) && <Badge variant="outline" className="border-error/40 text-error">error</Badge>}
             </div>
-            <h2 className="break-words font-mono text-sm font-medium">{node.code?.function ?? span.name}</h2>
+            <h2 className="break-words font-mono text-sm font-medium">
+              {/* A routing-only identity names where the route points, not code that ran: it stays in the chip. */}
+              {node.code?.evidence === 'executed' ? node.code.function : span.name}
+            </h2>
           </div>
 
           <dl className="grid grid-cols-[96px_minmax(0,1fr)] gap-x-3 gap-y-1.5 text-xs">
