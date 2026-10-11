@@ -40,7 +40,9 @@ public static class TraceAnalyzer
             return new NodeView(span, kind, "executed", span.Attributes.GetValueOrDefault("codeatlas.correlation") as string, code, gaps, kids);
         }
 
-        return new TraceView(Summarize(traceId, spans), roots.Select(Build).ToList(), truncated, []);
+        var summary = Summarize(traceId, spans);
+        var rootViews = roots.Select(Build).ToList();
+        return new TraceView(summary, rootViews, truncated, Explainer.Explain(summary, rootViews));
     }
 
     public static TraceSummary Summarize(string traceId, IReadOnlyList<SpanRecord> spans)
