@@ -2,12 +2,12 @@
 
 [繁體中文版本](usage.zh-TW.md)
 
-## Private distribution and package locations
+## Public distribution and package locations
 
-Source code is in the private repository `<owner>/codeatlas-live`. NuGet packages
+Source code is in the public repository `<owner>/codeatlas-live`. NuGet packages
 and the npm tarball are attached to its
 [v0.1.0 Release](https://github.com/<owner>/codeatlas-live/releases/tag/v0.1.0).
-Sign in to a GitHub account with read access and expand **Assets**:
+Open the release page and expand **Assets**; browser downloads do not require repository access:
 
 | Type | Release asset |
 | --- | --- |
@@ -16,12 +16,12 @@ Sign in to a GitHub account with read access and expand **Assets**:
 | NuGet collector/tool | `CodeAtlas.Collector.0.1.0.nupkg` |
 | npm browser integration (`@codeatlas/web`) | `codeatlas-web-0.1.0.tgz` |
 
-These are private Release downloads, not registry publications. They are not
+These are public Release downloads, not registry publications. They are not
 published on nuget.org or npmjs.com, and no private package registry is configured.
-Do not redistribute packages or traces publicly. Never put GitHub tokens in
+The source and packages are public; runtime collectors and application traces must remain protected. Never put GitHub tokens in
 project files, prompts, or documentation.
 
-Install GitHub CLI, run `gh auth login`, and confirm repository access. Then:
+For CLI downloads, install GitHub CLI and run `gh auth login` if required by the CLI. Then:
 
 ```bash
 gh repo clone <owner>/codeatlas-live
@@ -130,10 +130,10 @@ and custom tags can still contain sensitive information.
   proxy/base paths, and the application's OpenTelemetry sampling before assuming
   the code did not execute.
 
-## Maintain private releases
+## Maintain releases
 
 Run `scripts/pack-local.sh`, then upload the `.nupkg` and `.tgz` files to a Release
-in the private repository. For a new version, synchronize package versions,
+in the public repository. For a new version, synchronize package versions,
 documentation, and verification before creating a new tag. Do not overwrite
 published versions.
 

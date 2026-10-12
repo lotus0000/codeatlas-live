@@ -2,18 +2,18 @@
 
 [English version](usage.en.md)
 
-## 私有發佈
+## 公開發佈與套件位置
 
-原始碼放在 `<owner>/codeatlas-live` private repository；NuGet 套件和 npm tarball
-放在同一個 repo 的 Release。這不是 NuGet/npm registry 發佈；只有有 repo 讀取權限的帳號可以下載。
-不要將下載檔或 trace 分享到公開服務。不要把 GitHub token 寫進專案、prompt 或文件。
+原始碼放在 `<owner>/codeatlas-live` public repository；NuGet 套件和 npm tarball
+放在同一個 repo 的公開 Release。這不是 NuGet/npm registry 發佈；任何人都可以下載。
+原始碼與套件公開，但執行中的 collector 和應用程式 trace 仍需保護。不要把 GitHub token 寫進專案、prompt 或文件。
 
 下載頁：[v0.1.0 Release Assets](https://github.com/<owner>/codeatlas-live/releases/tag/v0.1.0)
-（需登入有權限的 GitHub 帳號）。NuGet 檔案是 `CodeAtlas.AspNetCore.0.1.0.nupkg`、
+（瀏覽器下載不需 repo 存取權限）。NuGet 檔案是 `CodeAtlas.AspNetCore.0.1.0.nupkg`、
 `CodeAtlas.Otlp.0.1.0.nupkg`、`CodeAtlas.Collector.0.1.0.nupkg`；npm 檔案是
 `codeatlas-web-0.1.0.tgz`。它們不在 nuget.org 或 npmjs.com，也尚未設定 private registry。
 
-先安裝 GitHub CLI，執行 `gh auth login` 並確認帳號有這個 repo 的權限。
+若要用 CLI 下載，先安裝 GitHub CLI；若 CLI 要求登入，執行 `gh auth login`。
 
 ```bash
 gh repo clone <owner>/codeatlas-live
@@ -94,8 +94,8 @@ SQL 預設只顯示操作與資料表，但 exception message、stack trace、�
 - viewer 空白時，先查 collector 是否啟動、Debug/Development 是否生效、代理與 base path、
   app 自己的 OpenTelemetry sampling；不要直接假設程式沒執行。
 
-## 維護私有 Release
+## 維護 Release
 
-執行 `scripts/pack-local.sh` 後上傳 `.nupkg` 和 `.tgz` 到 private repo Release。
+執行 `scripts/pack-local.sh` 後上傳 `.nupkg` 和 `.tgz` 到公開 repo Release。
 版本改動需先同步各套件版本、文件與驗證，再建立新 tag；不要覆蓋已發布版本。
-目前不使用 `dotnet nuget push` 或 `npm publish`，以免誤公開。
+目前不使用 `dotnet nuget push` 或 `npm publish`；registry 發佈需另外明確授權。

@@ -31,7 +31,8 @@ Preserve existing permissions, validation, OpenTelemetry sampling, exporters,
 and enrichment behavior.
 Ensure source-root points to the observed application. If code-server is used,
 handle absproxy, base paths, and HMR correctly.
-Do not make the repository, packages, collector, or traces public. Do not ask me
+The CodeAtlas repository and release packages are public. Do not expose the
+application's repository, running collector, or traces without explicit authorization. Do not ask me
 to paste tokens.
 Run the relevant tests and Release isolation checks, and report automated results
 separately from manual UI acceptance.
@@ -63,23 +64,23 @@ data to external services.
 Report in English: root cause, evidence, changes, tests, and remaining manual checks.
 ```
 
-## Prompt 3: Verify and publish privately
+## Prompt 3: Verify and publish a release
 
 ```text
-Verify CodeAtlas Live <version> and publish it as a private Release in
+Verify CodeAtlas Live <version> and publish it as a Release in the public repository
 <owner>/codeatlas-live.
 First check repository visibility, remotes, git status, package versions, and
-sensitive data. Stop if the target repository is public.
+sensitive data. Confirm the intended public repository and stop if secrets or private application data are found.
 Read scripts/test-all.sh and docs/manual-checks.md. Run the checks that are
 available and accurately report any outstanding manual checks.
 Build packages with scripts/pack-local.sh. Upload only the NuGet nupkg files
-and npm tgz tarball to the private Release.
+and npm tgz tarball to the Release.
 Do not publish to public NuGet/npm registries, change repository visibility,
 or write credentials into documentation.
 Never silently overwrite an existing tag or asset. The release tag must point
 to the exact commit that was verified.
-After publishing, verify private visibility, the tag commit, and asset names.
+After publishing, verify public visibility, the tag commit, and asset names.
 Download the assets and compare SHA-256 checksums against the local packages.
 Update the usage documentation and AI prompts. Clearly distinguish registry
-publication from file distribution through a private Release.
+publication from file distribution through a GitHub Release.
 ```

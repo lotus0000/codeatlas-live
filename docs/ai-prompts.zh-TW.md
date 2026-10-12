@@ -21,7 +21,7 @@ README.md、docs/integration.md、docs/limitations.md、docs/usage.zh-TW.md。
 不可代理 session token、open-file 等管理 API。collector 綁 loopback。
 保留既有權限、驗證、OpenTelemetry sampling、exporter 和 enrichment 行為。
 確認 source-root 指向被觀察專案；若使用 code-server，處理 absproxy/base/HMR。
-不得公開 repo、套件、collector 或 trace，不要要求我貼 token。
+CodeAtlas repo 與 Release 套件已公開；不得未經授權公開被觀察的專案、執行中的 collector 或 trace，不要要求我貼 token。
 完成後跑相關測試和 Release 隔離檢查，分開報告自動檢查與人工 UI 驗收。
 未經明確授權不 push、merge、deploy，也不修改正式服務。
 ```
@@ -43,15 +43,15 @@ CodeAtlas 證據：<去識別化 span/trace 資料、錯誤訊息或 viewer 截�
 最後用繁體中文報告：根因、證據、修復、測試，以及仍需人工確認的項目。
 ```
 
-## Prompt 3：驗收與私有發佈
+## Prompt 3：驗收與 Release 發佈
 
 ```text
-請驗收 CodeAtlas Live <版本> 並發佈到 <owner>/codeatlas-live 的 private Release。
-先檢查 repo visibility、remote、git status、套件版本及敏感資料；任何 public 狀態先停下。
+請驗收 CodeAtlas Live <版本> 並發佈到公開 repo <owner>/codeatlas-live 的 Release。
+先檢查 repo visibility、remote、git status、套件版本及敏感資料；確認目標是預期的公開 repo，發現 secret 或私有應用資料先停下。
 讀 scripts/test-all.sh 和 docs/manual-checks.md，跑可執行的檢查並如實報告人工項目。
-用 scripts/pack-local.sh 產生套件，只上傳 NuGet nupkg 與 npm tgz 至 private Release。
+用 scripts/pack-local.sh 產生套件，只上傳 NuGet nupkg 與 npm tgz 至 Release。
 不得推公開 NuGet/npm，不得改 repository visibility；不用 credentials 寫進文件。
 已存在的 tag/asset 不可默默覆蓋；只有驗證完的相同 commit 才能對應 release tag。
-檢查發佈後的 private 狀態、tag commit、asset 名稱，下載並比較 SHA-256。
-更新使用文件和 AI prompt，區分 registry 發佈與 private Release 檔案分發。
+檢查發佈後的 public 狀態、tag commit、asset 名稱，下載並比較 SHA-256。
+更新使用文件和 AI prompt，區分 registry 發佈與 GitHub Release 檔案分發。
 ```
