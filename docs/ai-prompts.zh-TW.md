@@ -1,5 +1,7 @@
 # 給 AI 的 CodeAtlas prompts
 
+[English version](ai-prompts.en.md)
+
 複製下面 prompt，替換 `<...>`。先確認 AI 有本地專案存取權限。
 CodeAtlas 沒有在這份文件承諾 MCP 或 AI 自動讀 trace 功能；沒有實際工具時，
 請提供去識別化的 viewer 證據或 collector 輸出，不要讓 AI 假裝已看過。
