@@ -6,5 +6,6 @@
     <LangVersion>latest</LangVersion>
     <IsPackable>false</IsPackable>
     <PathMap Condition="'$(Configuration)' == 'Release'">$(MSBuildThisFileDirectory)=/_/codeatlas-live/</PathMap>
+    <EnableSourceLink Condition="'$(Configuration)' == 'Release'">false</EnableSourceLink>
   </PropertyGroup>
 </Project>
