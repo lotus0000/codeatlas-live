@@ -8,12 +8,13 @@
 放在同一個 repo 的公開 Release。這不是 NuGet/npm registry 發佈；任何人都可以下載。
 原始碼與套件公開，但執行中的 collector 和應用程式 trace 仍需保護。不要把 GitHub token 寫進專案、prompt 或文件。
 
-下載頁：[v0.1.0 Release Assets](https://github.com/<owner>/codeatlas-live/releases/tag/v0.1.0)
+下載頁：本 repo 的 Releases → v0.1.0 → Assets
 （瀏覽器下載不需 repo 存取權限）。NuGet 檔案是 `CodeAtlas.AspNetCore.0.1.0.nupkg`、
 `CodeAtlas.Otlp.0.1.0.nupkg`、`CodeAtlas.Collector.0.1.0.nupkg`；npm 檔案是
 `codeatlas-web-0.1.0.tgz`。它們不在 nuget.org 或 npmjs.com，也尚未設定 private registry。
 
 若要用 CLI 下載，先安裝 GitHub CLI；若 CLI 要求登入，執行 `gh auth login`。
+執行前將 `<owner>` 換成本 repo 網址顯示的擁有者。
 
 ```bash
 gh repo clone <owner>/codeatlas-live
@@ -68,18 +69,19 @@ dotnet tool install CodeAtlas.Collector --version 0.1.0 --tool-path ./artifacts/
 dotnet run --project src/CodeAtlas.Collector -- --source-root /absolute/path/to/your-app
 ```
 
-## example-app 已有的接入方式
+## local ProjectReference 接入範例
 
-example-app 使用 local ProjectReference，不需要改成套件引用。先在 CodeAtlas repo
-執行 `scripts/pack-local.sh`，然後在 example-app repo 執行：
+若你的專案已使用 local ProjectReference，不需要改成套件引用。先在 CodeAtlas repo
+執行 `scripts/pack-local.sh`。若專案有自備的開發 launcher，可使用以下模式
+（這個 launcher 不包含在 CodeAtlas 中）：
 
 ```bash
 CODEATLAS_ROOT=/absolute/path/to/codeatlas-live ./script/dev-codeatlas.sh
 ```
 
-launcher 管理 collector/backend/frontend；使用終端印出的網址。停用時取消
-`CODEATLAS_ROOT` 並重新啟動正常開發流程。Dashboard 的既有開發設定會 opt-in，
-所以若從 Dashboard 啟動也要檢查它的設定。
+自備 launcher 應管理 collector/backend/frontend；使用終端印出的網址。停用時取消
+`CODEATLAS_ROOT` 並重新啟動正常開發流程。若開發 supervisor 明確設定 opt-in，
+也要檢查該設定。
 
 ## 怎麼判讀、驗收
 

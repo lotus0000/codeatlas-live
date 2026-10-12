@@ -6,7 +6,7 @@
 
 Source code is in the public repository `<owner>/codeatlas-live`. NuGet packages
 and the npm tarball are attached to its
-[v0.1.0 Release](https://github.com/<owner>/codeatlas-live/releases/tag/v0.1.0).
+`v0.1.0` Release (open this repository's Releases page).
 Open the release page and expand **Assets**; browser downloads do not require repository access:
 
 | Type | Release asset |
@@ -21,7 +21,8 @@ published on nuget.org or npmjs.com, and no private package registry is configur
 The source and packages are public; runtime collectors and application traces must remain protected. Never put GitHub tokens in
 project files, prompts, or documentation.
 
-For CLI downloads, install GitHub CLI and run `gh auth login` if required by the CLI. Then:
+For CLI downloads, install GitHub CLI and run `gh auth login` if required by the CLI.
+Replace `<owner>` with the owner shown in the repository URL before running these commands:
 
 ```bash
 gh repo clone <owner>/codeatlas-live
@@ -95,20 +96,21 @@ Alternatively, run the collector from source:
 dotnet run --project src/CodeAtlas.Collector -- --source-root /absolute/path/to/your-app
 ```
 
-## Existing example-app integration
+## Local project-reference integration example
 
-example-app uses a local ProjectReference; do not replace it with package
-references unnecessarily. First run `scripts/pack-local.sh` in CodeAtlas to build
-the required assets, then run this command from the example-app repository:
+If your application already uses a local ProjectReference, do not replace it with
+package references unnecessarily. First run `scripts/pack-local.sh` in CodeAtlas
+to build the required assets. An application with its own development launcher
+may use the following pattern (the launcher is not provided by CodeAtlas):
 
 ```bash
 CODEATLAS_ROOT=/absolute/path/to/codeatlas-live ./script/dev-codeatlas.sh
 ```
 
-The launcher manages the collector, backend, and frontend. Use the printed URLs.
+Your launcher should manage the collector, backend, and frontend. Use its printed URLs.
 To disable integration, unset `CODEATLAS_ROOT` and restart the normal development
-workflow. The existing Dashboard development configuration opts in explicitly;
-check that configuration too if you start the project through Dashboard.
+workflow. If your development supervisor opts in explicitly, check that
+configuration too.
 
 ## Interpret results and verify integration
 
