@@ -1,10 +1,17 @@
 # CodeAtlas Live 使用教學
 
+[English version](usage.en.md)
+
 ## 私有發佈
 
 原始碼放在 `<owner>/codeatlas-live` private repository；NuGet 套件和 npm tarball
 放在同一個 repo 的 Release。這不是 NuGet/npm registry 發佈；只有有 repo 讀取權限的帳號可以下載。
 不要將下載檔或 trace 分享到公開服務。不要把 GitHub token 寫進專案、prompt 或文件。
+
+下載頁：[v0.1.0 Release Assets](https://github.com/<owner>/codeatlas-live/releases/tag/v0.1.0)
+（需登入有權限的 GitHub 帳號）。NuGet 檔案是 `CodeAtlas.AspNetCore.0.1.0.nupkg`、
+`CodeAtlas.Otlp.0.1.0.nupkg`、`CodeAtlas.Collector.0.1.0.nupkg`；npm 檔案是
+`codeatlas-web-0.1.0.tgz`。它們不在 nuget.org 或 npmjs.com，也尚未設定 private registry。
 
 先安裝 GitHub CLI，執行 `gh auth login` 並確認帳號有這個 repo 的權限。
 

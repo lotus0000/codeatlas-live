@@ -25,7 +25,8 @@ CODEATLAS_PUBLIC_BASE=https://code.example.com/absproxy scripts/demo.sh
 
 ## Use it in your own app
 
-Private distribution: see [使用教學](docs/usage.zh-TW.md) for installation and
+Private distribution: see the [usage guide (English)](docs/usage.en.md) or
+[使用教學 (繁體中文)](docs/usage.zh-TW.md) for installation and
 [AI prompts (English)](docs/ai-prompts.en.md) or [AI prompts (繁體中文)](docs/ai-prompts.zh-TW.md)
 for integration and evidence-based debugging.
 Source and packaged binaries are distributed through a private GitHub repository and its Releases;
